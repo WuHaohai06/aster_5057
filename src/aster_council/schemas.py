@@ -54,7 +54,13 @@ class FactorEvidence(StrictModel):
     factor_id: str
     factor_group: str
     description: str
+    economic_hypothesis: str = ""
+    mechanism_explanation: str = ""
+    expected_direction: str = ""
+    falsification_criteria: list[str] = Field(default_factory=list)
+    mechanism_source: str = ""
     origin: str
+    formula: str
     formula_hash: str
     coverage: float = Field(ge=0.0, le=1.0)
     observations: int = Field(ge=0)
@@ -117,7 +123,9 @@ class CouncilConstraints(StrictModel):
 
 
 class DecisionPacket(StrictModel):
-    packet_version: Literal["aster-council-packet-v1"] = "aster-council-packet-v1"
+    packet_version: Literal["aster-council-packet-v1", "aster-council-packet-v2"] = (
+        "aster-council-packet-v2"
+    )
     decision_at: date
     input_cutoff: date
     universe: str
@@ -176,10 +184,20 @@ class GroupVote(StrictModel):
     risks: list[str] = Field(default_factory=list)
 
 
+class MechanismReview(StrictModel):
+    group_id: str
+    assessment: Literal["supported", "plausible", "weak", "unsupported", "not_available"]
+    pit_consistent: bool
+    falsifiable: bool
+    rationale: str = Field(min_length=10)
+    evidence_ids: list[str] = Field(min_length=1)
+
+
 class ReviewerBallot(StrictModel):
     role: ReviewerRole
     decision_at: date
     votes: list[GroupVote] = Field(min_length=1)
+    mechanism_reviews: list[MechanismReview] = Field(min_length=1)
     summary: str = Field(min_length=10)
     dissent_conditions: list[str] = Field(default_factory=list)
 

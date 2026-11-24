@@ -27,6 +27,11 @@ class RegistryEntry(StrictModel):
     factor_id: str
     factor_group: str
     description: str
+    economic_hypothesis: str = ""
+    mechanism_explanation: str = ""
+    expected_direction: str = ""
+    falsification_criteria: list[str] = Field(default_factory=list)
+    mechanism_source: str = ""
     origin: str
     formula: str
     approval_status: Literal["approved", "rejected", "candidate"]
@@ -154,7 +159,13 @@ class DecisionPacketBuilder:
                 factor_id=entry.factor_id,
                 factor_group=entry.factor_group,
                 description=entry.description,
+                economic_hypothesis=entry.economic_hypothesis,
+                mechanism_explanation=entry.mechanism_explanation,
+                expected_direction=entry.expected_direction,
+                falsification_criteria=entry.falsification_criteria,
+                mechanism_source=entry.mechanism_source,
                 origin=entry.origin,
+                formula=entry.formula,
                 formula_hash=_hash_text(entry.formula),
                 coverage=diagnostic.coverage,
                 observations=diagnostic.observations,
@@ -204,7 +215,7 @@ class DecisionPacketBuilder:
             )
         )
         payload = {
-            "packet_version": "aster-council-packet-v1",
+            "packet_version": "aster-council-packet-v2",
             "decision_at": decision_at.isoformat(),
             "input_cutoff": input_cutoff.isoformat(),
             "universe": registry.universe,

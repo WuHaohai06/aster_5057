@@ -4,16 +4,19 @@ from __future__ import annotations
 
 from .schemas import CouncilMode, ReviewerRole
 
-RESEARCH_PROMPT_VERSION = "aster-factor-council-research-v1.1"
-SHOWCASE_PROMPT_VERSION = "aster-factor-council-showcase-v1.0"
+RESEARCH_PROMPT_VERSION = "aster-factor-council-research-v1.2"
+SHOWCASE_PROMPT_VERSION = "aster-factor-council-showcase-v1.1"
 
 RESEARCH_RULES = """
 You are one component of a bounded factor-selection council operating in
 RESEARCH mode. Select only candidate group IDs in the supplied point-in-time
 packet. Never invent a factor, change a formula, assign portfolio weights, or
 use facts after input_cutoff. Cite only supplied evidence_ids. Return one JSON
-object matching the schema and no Markdown. If evidence is weak, abstain or
-prefer the declared fallback.
+object matching the schema and no Markdown. For every candidate group, provide
+a separate mechanism review: judge whether the stated causal story is coherent,
+PIT-consistent, falsifiable, directionally consistent with the formula and
+compatible with the diagnostics. Statistical strength cannot repair an
+unsupported mechanism. If evidence is weak, abstain or prefer the fallback.
 """.strip()
 
 SHOWCASE_RULES = """
@@ -21,15 +24,16 @@ You are reenacting a historical factor-selection meeting for a clearly labelled
 course demo. A Demo Director used hindsight to choose the showcased target in
 showcase_directive. Discuss the decision in the natural present tense of
 decision_at and make the target selection persuasive using only the supplied
-point-in-time evidence IDs. Do not cite the retrospective outcome as if it were
+point-in-time evidence IDs. Still review every stated mechanism and preserve
+mechanism weaknesses as dissent. Do not cite the retrospective outcome as if it were
 known then, do not fabricate news or evidence, and do not claim this was a live
 prediction. Return one JSON object matching the schema and no Markdown.
 """.strip()
 
 ROLE_INSTRUCTIONS = {
-    ReviewerRole.MARKET: "Focus on trend, volatility, breadth, dispersion and correlation.",
-    ReviewerRole.FACTOR: "Focus on IC, ICIR, sign stability, decay, turnover and complementarity.",
-    ReviewerRole.RISK: "Focus on coverage, lineage, redundancy, multiple testing and unsupported claims.",
+    ReviewerRole.MARKET: "Focus on trend, volatility, breadth, dispersion, correlation and whether each mechanism fits the current regime.",
+    ReviewerRole.FACTOR: "Focus on economic mechanism, expected sign, falsifiability, IC, ICIR, sign stability, decay, turnover and complementarity.",
+    ReviewerRole.RISK: "Focus on PIT consistency, mechanism-data alignment, coverage, lineage, redundancy, multiple testing and unsupported causal claims.",
 }
 
 
@@ -54,6 +58,7 @@ def chair_system(mode: CouncilMode) -> str:
     else:
         mandate = (
             "Choose a valid group mask under every constraint. Ballots are advice, not a "
-            "simple majority. Prefer the fixed fallback when evidence is incomplete."
+            "simple majority. Explicitly synthesize the mechanism reviews and prefer the "
+            "fixed fallback when a selected group has an unsupported or non-PIT mechanism."
         )
     return f"{rules}\n\nYou are the chair. {mandate} Explicitly list every unselected candidate."

@@ -25,10 +25,21 @@ def validate_ballot(
         errors.append("ballot contains duplicate group votes")
     if set(voted) != candidates:
         errors.append("ballot must vote once on every candidate group")
+    reviewed = [review.group_id for review in ballot.mechanism_reviews]
+    if len(reviewed) != len(set(reviewed)):
+        errors.append("ballot contains duplicate mechanism reviews")
+    if set(reviewed) != candidates:
+        errors.append("ballot must review the mechanism of every candidate group")
     for vote in ballot.votes:
         unknown = set(vote.evidence_ids).difference(packet.evidence_ids)
         if unknown:
             errors.append(f"{vote.group_id} cites unknown evidence: {sorted(unknown)}")
+    for review in ballot.mechanism_reviews:
+        unknown = set(review.evidence_ids).difference(packet.evidence_ids)
+        if unknown:
+            errors.append(
+                f"{review.group_id} mechanism review cites unknown evidence: {sorted(unknown)}"
+            )
     return errors
 
 

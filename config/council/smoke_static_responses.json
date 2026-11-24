@@ -36,6 +36,40 @@
         "risks": ["Breadth remains below one half"]
       }
     ],
+    "mechanism_reviews": [
+      {
+        "group_id": "conventional_low_vol",
+        "assessment": "plausible",
+        "pit_consistent": true,
+        "falsifiable": true,
+        "rationale": "The leverage-constraint mechanism is coherent and compatible with the volatile regime.",
+        "evidence_ids": ["factor:baseline_low_vol_20:diagnostics:2024-12-31"]
+      },
+      {
+        "group_id": "conventional_reversal",
+        "assessment": "weak",
+        "pit_consistent": true,
+        "falsifiable": true,
+        "rationale": "Liquidity-driven reversal is plausible, but the mixed trend gives limited regime support.",
+        "evidence_ids": ["factor:baseline_rev_5:diagnostics:2024-12-31"]
+      },
+      {
+        "group_id": "shock_reversal",
+        "assessment": "plausible",
+        "pit_consistent": true,
+        "falsifiable": true,
+        "rationale": "Attention and liquidity shocks provide a coherent reversal mechanism in elevated volatility.",
+        "evidence_ids": ["factor:pv_a01_shock_reversal:diagnostics:2024-12-31"]
+      },
+      {
+        "group_id": "volume_confirmed_momentum",
+        "assessment": "plausible",
+        "pit_consistent": true,
+        "falsifiable": true,
+        "rationale": "Gradual information diffusion is compatible with positive medium-horizon trend evidence.",
+        "evidence_ids": ["factor:pv_a04_volume_momentum:diagnostics:2024-12-31"]
+      }
+    ],
     "summary": "Retain low volatility and two distinct price-volume mechanisms under a mixed, volatile regime.",
     "dissent_conditions": ["Prefer the fixed fallback if the synthetic market packet is incomplete"]
   },
@@ -76,6 +110,40 @@
         "risks": ["Maximum correlation is higher than the other candidates"]
       }
     ],
+    "mechanism_reviews": [
+      {
+        "group_id": "conventional_low_vol",
+        "assessment": "supported",
+        "pit_consistent": true,
+        "falsifiable": true,
+        "rationale": "The stated low-volatility mechanism has the expected sign and is supported by stable diagnostics.",
+        "evidence_ids": ["factor:baseline_low_vol_20:diagnostics:2024-12-31"]
+      },
+      {
+        "group_id": "conventional_reversal",
+        "assessment": "weak",
+        "pit_consistent": true,
+        "falsifiable": true,
+        "rationale": "Mean reversion is testable but the weaker ICIR provides limited empirical confirmation.",
+        "evidence_ids": ["factor:baseline_rev_5:diagnostics:2024-12-31"]
+      },
+      {
+        "group_id": "shock_reversal",
+        "assessment": "supported",
+        "pit_consistent": true,
+        "falsifiable": true,
+        "rationale": "The overreaction mechanism matches the formula sign and the strongest mean rank IC.",
+        "evidence_ids": ["factor:pv_a01_shock_reversal:diagnostics:2024-12-31"]
+      },
+      {
+        "group_id": "volume_confirmed_momentum",
+        "assessment": "plausible",
+        "pit_consistent": true,
+        "falsifiable": true,
+        "rationale": "Information diffusion is coherent with the trend-volume interaction and slower decay.",
+        "evidence_ids": ["factor:pv_a04_volume_momentum:diagnostics:2024-12-31"]
+      }
+    ],
     "summary": "Select the stable baseline plus two price-volume groups with different decay profiles.",
     "dissent_conditions": ["Retain conventional reversal if transaction-cost estimates invalidate shock reversal"]
   },
@@ -114,6 +182,40 @@
         "rationale": "Coverage is acceptable and turnover is moderate, although redundancy requires monitoring.",
         "evidence_ids": ["factor:pv_a04_volume_momentum:diagnostics:2024-12-31"],
         "risks": ["Higher maximum correlation"]
+      }
+    ],
+    "mechanism_reviews": [
+      {
+        "group_id": "conventional_low_vol",
+        "assessment": "plausible",
+        "pit_consistent": true,
+        "falsifiable": true,
+        "rationale": "The mechanism uses only trailing volatility and does not require unavailable information.",
+        "evidence_ids": ["factor:baseline_low_vol_20:diagnostics:2024-12-31"]
+      },
+      {
+        "group_id": "conventional_reversal",
+        "assessment": "plausible",
+        "pit_consistent": true,
+        "falsifiable": true,
+        "rationale": "The liquidity-pressure story is PIT-compatible but remains sensitive to trading costs.",
+        "evidence_ids": ["factor:baseline_rev_5:diagnostics:2024-12-31"]
+      },
+      {
+        "group_id": "shock_reversal",
+        "assessment": "weak",
+        "pit_consistent": true,
+        "falsifiable": true,
+        "rationale": "The causal story is testable, but high turnover and synthetic evidence weaken support.",
+        "evidence_ids": ["factor:pv_a01_shock_reversal:diagnostics:2024-12-31"]
+      },
+      {
+        "group_id": "volume_confirmed_momentum",
+        "assessment": "plausible",
+        "pit_consistent": true,
+        "falsifiable": true,
+        "rationale": "Trailing price and volume inputs align with the gradual information-diffusion mechanism.",
+        "evidence_ids": ["factor:pv_a04_volume_momentum:diagnostics:2024-12-31"]
       }
     ],
     "summary": "Preserve a conventional baseline and treat high-turnover synthetic evidence cautiously.",

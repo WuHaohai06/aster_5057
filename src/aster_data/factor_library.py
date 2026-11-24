@@ -21,7 +21,7 @@ from .factor_store import FACTOR_COLUMNS
 from .io import instrument_from_code, sha256_file, write_json_atomic
 
 
-CATALOG_SCHEMA_VERSION = "aster-factor-library-v1"
+CATALOG_SCHEMA_VERSION = "aster-factor-library-v2"
 
 
 class StrictModel(BaseModel):
@@ -86,6 +86,11 @@ class FactorRecord(StrictModel):
     status_reason: str
     expression: str
     description: str
+    economic_hypothesis: str = ""
+    mechanism_explanation: str = ""
+    expected_direction: str = ""
+    falsification_criteria: list[str] = Field(default_factory=list)
+    mechanism_source: str = ""
     implementation_ref: str
     pit_compliant: bool
     research_eligible: bool
@@ -215,6 +220,18 @@ def _quanta_metric(backtest: dict[str, Any], *names: str) -> Any:
     return None
 
 
+def _hypothesis_section(text: str, heading: str, next_heading: str | None = None) -> str:
+    start = re.search(rf"(?:^|\n)\s*{re.escape(heading)}\s*:\s*", text, re.IGNORECASE)
+    if not start:
+        return ""
+    tail = text[start.end():]
+    if next_heading:
+        end = re.search(rf"\n\s*{re.escape(next_heading)}\s*:\s*", tail, re.IGNORECASE)
+        if end:
+            tail = tail[:end.start()]
+    return " ".join(tail.split())
+
+
 def _record_from_registry(
     *,
     item: dict[str, Any],
@@ -244,6 +261,29 @@ def _record_from_registry(
         ),
         expression=str(metadata.get("expression", item.get("formula", "see source artifact"))),
         description=str(metadata.get("description", item.get("description", factor_id))),
+        economic_hypothesis=str(
+            metadata.get(
+                "economic_hypothesis",
+                "Higher disclosed profitability or growth predicts stronger subsequent returns."
+                if family == "financial" else "",
+            )
+        ),
+        mechanism_explanation=str(
+            metadata.get(
+                "mechanism_explanation",
+                "Public financial disclosures may be incorporated into prices gradually."
+                if family == "financial" else "",
+            )
+        ),
+        expected_direction="positive cross-sectional Rank IC",
+        falsification_criteria=[
+            "Non-positive matured out-of-sample Rank IC across multiple calendar years",
+            "Performance disappears after turnover, redundancy and PIT controls",
+        ],
+        mechanism_source=(
+            "src/aster_portfolio/factors.py:PRICE_VOLUME_FACTOR_DEFINITIONS"
+            if family == "price_volume" else "economic prior; requires Council review"
+        ),
         implementation_ref=(
             "src/aster_portfolio/factors.py" if family == "price_volume"
             else "src/aster_data/factor_store.py:build_financial_factors"
@@ -282,6 +322,18 @@ def _text_records(*, project_root: Path, path: Path, manifest_path: Path) -> lis
                 status_reason="Infrastructure smoke only; currently covers two filings",
                 expression="See deterministic filing-text implementation",
                 description=f"Deterministic filing text feature {factor_id}",
+                economic_hypothesis=(
+                    "Public filing language contains incremental information about subsequent returns."
+                ),
+                mechanism_explanation=(
+                    "Tone, risk-language density and filing complexity may reveal management outlook or latent operating risk before it is fully incorporated into price."
+                ),
+                expected_direction="factor-specific; must be established out of sample",
+                falsification_criteria=[
+                    "No stable matured Rank IC after controlling for document availability",
+                    "Signal vanishes after issuer and filing-type controls",
+                ],
+                mechanism_source="src/aster_data/filing_text_factors.py",
                 implementation_ref="src/aster_data/filing_text_factors.py",
                 pit_compliant=True,
                 research_eligible=False,
@@ -332,6 +384,18 @@ def _quanta_records(
         )
         backtest = item.get("backtest_results") or {}
         feedback = item.get("feedback") or {}
+        metadata = item.get("metadata") or {}
+        hypothesis_text = str(metadata.get("hypothesis", ""))
+        hypothesis = _hypothesis_section(
+            hypothesis_text, "Hypothesis", "Concise Observation"
+        )
+        justification = _hypothesis_section(
+            hypothesis_text, "Concise Justification", "Concise Knowledge"
+        )
+        knowledge = _hypothesis_section(
+            hypothesis_text, "Concise Knowledge", "concise Specification"
+        )
+        specification = _hypothesis_section(hypothesis_text, "concise Specification")
         records.append(
             FactorRecord(
                 factor_id=factor_id,
@@ -344,6 +408,21 @@ def _quanta_records(
                 status_reason="QuantaAlpha candidate; latest AI feedback did not approve promotion",
                 expression=item.get("factor_expression", ""),
                 description=item.get("factor_description", "QuantaAlpha generated factor"),
+                economic_hypothesis=hypothesis,
+                mechanism_explanation=" ".join(
+                    part for part in (justification, knowledge) if part
+                ),
+                expected_direction=(
+                    "positive cross-sectional Rank IC for the stated forward horizon"
+                ),
+                falsification_criteria=[
+                    specification or "Matured PIT Rank IC is non-positive out of sample",
+                    "The effect is unstable across years or redundant with an existing factor",
+                ],
+                mechanism_source=(
+                    _relative(library_path, project_root)
+                    + f"#factors.{factor_id}.metadata.hypothesis"
+                ),
                 implementation_ref=(
                     _relative(library_path, project_root) + f"#factors.{factor_id}"
                 ),
@@ -743,6 +822,11 @@ def export_council_inputs(
                 "factor_id": factor.factor_id,
                 "factor_group": factor.factor_group,
                 "description": factor.description,
+                "economic_hypothesis": factor.economic_hypothesis,
+                "mechanism_explanation": factor.mechanism_explanation,
+                "expected_direction": factor.expected_direction,
+                "falsification_criteria": factor.falsification_criteria,
+                "mechanism_source": factor.mechanism_source,
                 "origin": factor.origin,
                 "formula": factor.expression,
                 "approval_status": "approved",

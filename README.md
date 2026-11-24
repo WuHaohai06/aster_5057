@@ -238,7 +238,7 @@ python .\scripts\manage_factor_library.py export-council `
 
 ## Factor Council
 
-Council 使用三个 Reviewer 和一个 Chair。模型输出必须符合 Pydantic schema，引用已知 evidence ID，并满足代码侧候选集合和组数限制；验证失败时使用固定 fallback。
+Council 使用三个 Reviewer 和一个 Chair。模型输出必须符合 Pydantic schema，引用已知 evidence ID，并满足代码侧候选集合和组数限制；验证失败时使用固定 fallback。每个候选因子同时提供经济学假设、机制解释、预期方向、证伪条件和来源。三位 Reviewer 必须逐组提交结构化机制评审，包括机制支持度、PIT 一致性和可证伪性；遗漏任一候选组的机制评审会触发 fallback。
 
 ```powershell
 python .\scripts\build_factor_council_packet.py `

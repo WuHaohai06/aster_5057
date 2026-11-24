@@ -1,8 +1,8 @@
-# Aster AI Factor Council v1
+# Aster AI Factor Council v2
 
 ## Scope
 
-Council v1 selects an enabled group mask from a versioned registry of already
+Council v2 selects an enabled group mask from a versioned registry of already
 approved factors. It cannot create or edit formulas, assign continuous factor
 weights, place trades, or use evidence after `input_cutoff`.
 
@@ -72,9 +72,15 @@ conda run -n aster_5057_quantaalpha python -m aster_council run `
 - Unmatured labels and diagnostics observed after the cutoff are excluded.
 - Every citation must resolve to an evidence ID in the packet.
 - Every candidate group must be classified exactly once.
+- Every reviewer must separately assess every candidate group's economic
+  mechanism, PIT consistency and falsifiability. Missing mechanism reviews
+  invalidate the ballot and trigger the deterministic fallback.
+- The packet carries the stated hypothesis, mechanism explanation, expected
+  direction, falsification criteria and mechanism source; these are claims for
+  Council scrutiny, not facts certified by the framework.
 - Group-count and conventional-baseline constraints are enforced outside the LLM.
 - Runs are immutable directories with a SHA-256 manifest.
 - Repeating a provider model name does not pin the provider's underlying weights;
   therefore historical raw outputs and final decisions are retained.
-- V1 consumes prepared diagnostics. Producing those diagnostics from Qlib factor
-  outputs is the next integration boundary and remains deterministic code.
+- V2 consumes prepared diagnostics and structured mechanism claims. Producing
+  diagnostics from factor values remains deterministic code.
