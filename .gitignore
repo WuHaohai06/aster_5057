@@ -43,6 +43,8 @@ config/local/
 
 # Generated datasets and research artifacts
 data/
+!apps/aster-console/public/data/
+!apps/aster-console/public/data/snapshot.json
 run/
 logs/
 log/
@@ -100,3 +102,13 @@ Thumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 System Volume Information/
+
+# Frontend dependencies and builds
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Local browser QA artifacts for the research console
+apps/aster-console/.edge-*/
+apps/aster-console/preview*.png
+apps/aster-console/preview*.log

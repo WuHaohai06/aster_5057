@@ -240,6 +240,22 @@ python .\scripts\manage_factor_library.py export-council `
 
 Council 使用三个 Reviewer 和一个 Chair。模型输出必须符合 Pydantic schema，引用已知 evidence ID，并满足代码侧候选集合和组数限制；验证失败时使用固定 fallback。每个候选因子同时提供经济学假设、机制解释、预期方向、证伪条件和来源。三位 Reviewer 必须逐组提交结构化机制评审，包括机制支持度、PIT 一致性和可证伪性；遗漏任一候选组的机制评审会触发 fallback。
 
+## Aster Research Console
+
+交互式前端位于 `apps/aster-console`，提供流程总览、因子库、因子详情、
+AI Council、财报智能和组合回放页面。前端只消费裁剪后的只读快照，不会
+暴露 API Key、原始 PDF、大型 Parquet 或本机绝对路径。
+
+```powershell
+python .\scripts\export_dashboard_snapshot.py
+cd .\apps\aster-console
+npm install
+npm run dev
+```
+
+产品规划和后续实时 API 方案见
+[docs/aster_console_frontend_plan.md](docs/aster_console_frontend_plan.md)。
+
 ```powershell
 python .\scripts\build_factor_council_packet.py `
   --registry .\data\council\real_evidence\factor_registry.json `
