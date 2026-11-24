@@ -1,0 +1,8 @@
+# Deterministic portfolio research, backtest and bounded AI Council.
+numpy>=1.26,<2
+pandas>=2.2,<3
+pyarrow==17.0.0
+scikit-learn>=1.4,<2
+cvxpy>=1.5,<2
+pydantic>=2.8,<3
+openai>=1.30,<4

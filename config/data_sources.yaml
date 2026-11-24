@@ -1,0 +1,27 @@
+qlib:
+  package_version: "0.9.7"
+  collector_source: "vendor/qlib-v0.9.7"
+
+datasets:
+  stock_daily_primary_candidate:
+    collector: "akshare.stock_zh_a_hist_em"
+    upstream: "eastmoney"
+    adjustment: "hfq"
+    status: "primary_candidate_requires_cross_source_quality_monitoring"
+  csi500_membership_candidate:
+    collector: "qlib.cn_index.CSI500Index"
+    upstream: "baostock"
+    status: "candidate_requires_official_effective_date_validation"
+  fundamentals_pit_candidate:
+    collector: "qlib.pit.PitCollector"
+    upstream: "baostock"
+    status: "candidate_requires_coverage_and_revision_validation"
+  stock_daily_fallback:
+    collector: "qlib.yahoo.YahooCollector"
+    upstream: "yahoo_finance"
+    status: "fallback_and_cross_check"
+  ic_futures_official:
+    collector: "aster_data.ic_futures"
+    upstream: "cffex_monthly_history_archives"
+    status: "official_archives_with_lagged_continuous_selection"
+

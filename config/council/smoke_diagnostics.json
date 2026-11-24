@@ -1,0 +1,80 @@
+{
+  "label_horizon_days": 5,
+  "factors": [
+    {
+      "factor_id": "baseline_rev_5",
+      "observed_at": "2024-12-31",
+      "latest_label_date": "2024-12-20",
+      "observations": 96,
+      "coverage": 0.995,
+      "rank_ic_mean": 0.018,
+      "rank_ic_ir": 0.31,
+      "rank_ic_positive_fraction": 0.56,
+      "turnover": 0.24,
+      "max_abs_correlation": 0.43,
+      "yearly_rank_ic": {"2022": 0.012, "2023": 0.021, "2024": 0.019},
+      "decay_rank_ic": {"1": 0.025, "5": 0.018, "10": 0.006},
+      "warnings": []
+    },
+    {
+      "factor_id": "baseline_low_vol_20",
+      "observed_at": "2024-12-31",
+      "latest_label_date": "2024-12-20",
+      "observations": 96,
+      "coverage": 0.998,
+      "rank_ic_mean": 0.027,
+      "rank_ic_ir": 0.52,
+      "rank_ic_positive_fraction": 0.62,
+      "turnover": 0.08,
+      "max_abs_correlation": 0.38,
+      "yearly_rank_ic": {"2022": 0.022, "2023": 0.031, "2024": 0.025},
+      "decay_rank_ic": {"1": 0.012, "5": 0.027, "10": 0.024},
+      "warnings": []
+    },
+    {
+      "factor_id": "pv_a01_shock_reversal",
+      "observed_at": "2024-12-31",
+      "latest_label_date": "2024-12-20",
+      "observations": 72,
+      "coverage": 0.982,
+      "rank_ic_mean": 0.031,
+      "rank_ic_ir": 0.44,
+      "rank_ic_positive_fraction": 0.60,
+      "turnover": 0.29,
+      "max_abs_correlation": 0.34,
+      "yearly_rank_ic": {"2022": 0.028, "2023": 0.018, "2024": 0.041},
+      "decay_rank_ic": {"1": 0.039, "5": 0.031, "10": 0.009},
+      "warnings": ["synthetic smoke metrics; not research evidence"]
+    },
+    {
+      "factor_id": "pv_a04_volume_momentum",
+      "observed_at": "2024-12-31",
+      "latest_label_date": "2024-12-20",
+      "observations": 72,
+      "coverage": 0.976,
+      "rank_ic_mean": 0.024,
+      "rank_ic_ir": 0.39,
+      "rank_ic_positive_fraction": 0.58,
+      "turnover": 0.16,
+      "max_abs_correlation": 0.57,
+      "yearly_rank_ic": {"2022": 0.015, "2023": 0.029, "2024": 0.026},
+      "decay_rank_ic": {"1": 0.010, "5": 0.024, "10": 0.028},
+      "warnings": ["synthetic smoke metrics; not research evidence"]
+    },
+    {
+      "factor_id": "unmatured_demo_factor",
+      "observed_at": "2024-12-31",
+      "latest_label_date": "2025-01-10",
+      "observations": 72,
+      "coverage": 0.99,
+      "rank_ic_mean": 0.20,
+      "rank_ic_ir": 2.0,
+      "rank_ic_positive_fraction": 0.90,
+      "turnover": 0.10,
+      "max_abs_correlation": 0.10,
+      "yearly_rank_ic": {"2024": 0.20},
+      "decay_rank_ic": {"5": 0.20},
+      "warnings": ["must be excluded because the label is after the cutoff"]
+    }
+  ]
+}

@@ -1,0 +1,102 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Build and package artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Virtual environments and local Conda environments
+.venv/
+venv/
+env/
+ENV/
+.conda/
+conda-env/
+
+# Credentials and local-only configuration
+.env
+.env.*
+!.env.example
+*.dpapi
+*.pem
+*.p12
+*.pfx
+credentials.json
+secrets.json
+config/local/
+*.local.yaml
+*.local.yml
+*.local.json
+
+# Generated datasets and research artifacts
+data/
+run/
+logs/
+log/
+mlruns/
+mlartifacts/
+wandb/
+
+# Third-party source mirrors are fetched separately
+vendor/
+
+# Large binary and model artifacts outside standard data directories
+*.parquet
+*.feather
+*.arrow
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.joblib
+*.onnx
+*.pt
+*.pth
+*.ckpt
+*.pdf
+*.zip
+*.7z
+*.tar
+*.tar.gz
+*.gz
+
+# Runtime scratch files
+*.tmp
+*.temp
+*.pid
+*.log
+*.out
+*.err
+*.trace
+*.bak
+*.swp
+*.swo
+*~
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.code-workspace
+
+# OS metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+System Volume Information/

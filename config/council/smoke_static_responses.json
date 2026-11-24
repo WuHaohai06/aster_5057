@@ -1,0 +1,138 @@
+{
+  "market_regime_reviewer": {
+    "role": "market_regime_reviewer",
+    "decision_at": "2024-12-31",
+    "votes": [
+      {
+        "group_id": "conventional_low_vol",
+        "action": "enable",
+        "confidence": 0.78,
+        "rationale": "Elevated short-window volatility supports retaining a stable low-volatility baseline.",
+        "evidence_ids": ["market:synthetic-smoke:2024-12-31", "factor:baseline_low_vol_20:diagnostics:2024-12-31"],
+        "risks": []
+      },
+      {
+        "group_id": "conventional_reversal",
+        "action": "disable",
+        "confidence": 0.55,
+        "rationale": "The mixed benchmark trend does not provide a strong regime case for the short reversal baseline.",
+        "evidence_ids": ["market:synthetic-smoke:2024-12-31", "factor:baseline_rev_5:diagnostics:2024-12-31"],
+        "risks": ["Regime evidence is synthetic and weak"]
+      },
+      {
+        "group_id": "shock_reversal",
+        "action": "enable",
+        "confidence": 0.66,
+        "rationale": "Moderate breadth and elevated volatility are compatible with liquidity-driven shock reversal.",
+        "evidence_ids": ["market:synthetic-smoke:2024-12-31", "factor:pv_a01_shock_reversal:diagnostics:2024-12-31"],
+        "risks": ["Persistent information shocks may continue rather than reverse"]
+      },
+      {
+        "group_id": "volume_confirmed_momentum",
+        "action": "enable",
+        "confidence": 0.59,
+        "rationale": "Positive medium-horizon benchmark return permits a small momentum-confirmation allocation in the factor set.",
+        "evidence_ids": ["market:synthetic-smoke:2024-12-31", "factor:pv_a04_volume_momentum:diagnostics:2024-12-31"],
+        "risks": ["Breadth remains below one half"]
+      }
+    ],
+    "summary": "Retain low volatility and two distinct price-volume mechanisms under a mixed, volatile regime.",
+    "dissent_conditions": ["Prefer the fixed fallback if the synthetic market packet is incomplete"]
+  },
+  "factor_evidence_reviewer": {
+    "role": "factor_evidence_reviewer",
+    "decision_at": "2024-12-31",
+    "votes": [
+      {
+        "group_id": "conventional_low_vol",
+        "action": "enable",
+        "confidence": 0.86,
+        "rationale": "The group has the strongest stability, low turnover and consistent yearly synthetic IC.",
+        "evidence_ids": ["factor:baseline_low_vol_20:diagnostics:2024-12-31"],
+        "risks": []
+      },
+      {
+        "group_id": "conventional_reversal",
+        "action": "disable",
+        "confidence": 0.61,
+        "rationale": "The baseline is eligible but has weaker ICIR and materially higher turnover than low volatility.",
+        "evidence_ids": ["factor:baseline_rev_5:diagnostics:2024-12-31"],
+        "risks": ["Disabling a distinct short horizon may reduce diversification"]
+      },
+      {
+        "group_id": "shock_reversal",
+        "action": "enable",
+        "confidence": 0.72,
+        "rationale": "The synthetic diagnostics show the highest mean rank IC with acceptable cross-factor correlation.",
+        "evidence_ids": ["factor:pv_a01_shock_reversal:diagnostics:2024-12-31"],
+        "risks": ["Turnover is the highest among candidates"]
+      },
+      {
+        "group_id": "volume_confirmed_momentum",
+        "action": "enable",
+        "confidence": 0.64,
+        "rationale": "The signal has slower decay and moderate turnover, adding a horizon distinct from shock reversal.",
+        "evidence_ids": ["factor:pv_a04_volume_momentum:diagnostics:2024-12-31"],
+        "risks": ["Maximum correlation is higher than the other candidates"]
+      }
+    ],
+    "summary": "Select the stable baseline plus two price-volume groups with different decay profiles.",
+    "dissent_conditions": ["Retain conventional reversal if transaction-cost estimates invalidate shock reversal"]
+  },
+  "risk_data_reviewer": {
+    "role": "risk_data_reviewer",
+    "decision_at": "2024-12-31",
+    "votes": [
+      {
+        "group_id": "conventional_low_vol",
+        "action": "enable",
+        "confidence": 0.84,
+        "rationale": "Coverage and observation count are high while turnover is the lowest among all candidates.",
+        "evidence_ids": ["factor:baseline_low_vol_20:diagnostics:2024-12-31"],
+        "risks": ["Price-only volatility is not direct crowding evidence"]
+      },
+      {
+        "group_id": "conventional_reversal",
+        "action": "enable",
+        "confidence": 0.60,
+        "rationale": "It is a valid conventional fallback component with broad coverage and a distinct horizon.",
+        "evidence_ids": ["factor:baseline_rev_5:diagnostics:2024-12-31"],
+        "risks": ["Turnover may be costly"]
+      },
+      {
+        "group_id": "shock_reversal",
+        "action": "abstain",
+        "confidence": 0.48,
+        "rationale": "The group passes hard gates but its high turnover and synthetic warning require transaction-cost evidence.",
+        "evidence_ids": ["factor:pv_a01_shock_reversal:diagnostics:2024-12-31"],
+        "risks": ["Synthetic metrics", "High turnover"]
+      },
+      {
+        "group_id": "volume_confirmed_momentum",
+        "action": "enable",
+        "confidence": 0.57,
+        "rationale": "Coverage is acceptable and turnover is moderate, although redundancy requires monitoring.",
+        "evidence_ids": ["factor:pv_a04_volume_momentum:diagnostics:2024-12-31"],
+        "risks": ["Higher maximum correlation"]
+      }
+    ],
+    "summary": "Preserve a conventional baseline and treat high-turnover synthetic evidence cautiously.",
+    "dissent_conditions": ["Use the fixed pool if costs or evidence lineage cannot be verified"]
+  },
+  "chair": {
+    "decision_at": "2024-12-31",
+    "selected_groups": ["conventional_low_vol", "shock_reversal", "volume_confirmed_momentum"],
+    "disabled_groups": ["conventional_reversal"],
+    "rationale": "Retain the stable conventional low-volatility baseline and add two price-volume mechanisms with distinct short and medium decay profiles; preserve the risk review's turnover objection as dissent.",
+    "evidence_ids": [
+      "market:synthetic-smoke:2024-12-31",
+      "factor:baseline_low_vol_20:diagnostics:2024-12-31",
+      "factor:pv_a01_shock_reversal:diagnostics:2024-12-31",
+      "factor:pv_a04_volume_momentum:diagnostics:2024-12-31"
+    ],
+    "dissent": ["Risk reviewer preferred retaining conventional reversal and abstained on shock reversal because of turnover."],
+    "confidence": 0.63,
+    "use_fallback": false,
+    "fallback_reason": null
+  }
+}

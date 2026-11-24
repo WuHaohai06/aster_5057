@@ -1,0 +1,12 @@
+product: IC
+underlying: CSI500
+source: CFFEX official monthly historical archives
+contract_multiplier: 200.0
+margin_rate_assumption: 0.12
+continuous_selection_rule: highest_open_interest_then_volume_lagged_one_session
+price_field: close
+return_rule: same_contract_close_to_close
+roll_cost_bps_assumption: 1.0
+notes:
+  - Margin is an explicit research assumption and must not be represented as an exchange historical fact.
+  - Production replay must retain every monthly archive hash and every selected contract.

@@ -1,0 +1,80 @@
+# Aster AI Factor Council v1
+
+## Scope
+
+Council v1 selects an enabled group mask from a versioned registry of already
+approved factors. It cannot create or edit formulas, assign continuous factor
+weights, place trades, or use evidence after `input_cutoff`.
+
+The workflow is:
+
+1. Build a deterministic point-in-time packet.
+2. Run three independent reviewers in parallel.
+3. Run the chair only after every ballot passes schema and citation checks.
+4. Validate the chair mask with deterministic rules.
+5. Persist packet, ballots, raw model outputs, decision and file hashes.
+6. Use the declared fixed factor pool on any failure or explicit chair fallback.
+
+## Roles
+
+- `market_regime_reviewer`: price-observable regime evidence only.
+- `factor_evidence_reviewer`: matured IC, decay, stability, turnover and redundancy.
+- `risk_data_reviewer`: coverage, lineage, proxy limits and multiple-testing risk.
+- `chair`: reconciles ballots under hard constraints; it is not a majority voter.
+
+## Inputs
+
+Four JSON inputs are required:
+
+- factor registry: version, group, formula, origin and approval status;
+- diagnostics: only labels matured by the cutoff, coverage, IC/ICIR, decay and turnover;
+- market state: benchmark trend/volatility, breadth, dispersion and correlation;
+- policy: group-count limits, hard evidence gates, required baselines and fallback groups.
+
+Files prefixed with `smoke_` under `config/council` are synthetic integration
+fixtures. They must never be presented as research results.
+
+## Commands
+
+Build a packet:
+
+```powershell
+$env:PYTHONPATH = "$PWD\src"
+conda run -n aster_5057_quantaalpha python -m aster_council build-packet `
+  --registry .\config\council\smoke_factor_registry.json `
+  --diagnostics .\config\council\smoke_diagnostics.json `
+  --market .\config\council\smoke_market_state.json `
+  --policy .\config\council\smoke_policy.json `
+  --decision-at 2024-12-31 `
+  --input-cutoff 2024-12-31 `
+  --output .\run\council_smoke\packet.json
+```
+
+Run with DeepSeek and the current-user DPAPI credential:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\run_factor_council.ps1 `
+  -PacketPath .\run\council_smoke\packet.json
+```
+
+Run deterministically without an API:
+
+```powershell
+$env:PYTHONPATH = "$PWD\src"
+conda run -n aster_5057_quantaalpha python -m aster_council run `
+  --packet .\run\council_smoke\packet.json `
+  --output-root .\run\council_smoke\offline_runs `
+  --static-responses .\config\council\smoke_static_responses.json
+```
+
+## Hard guarantees and limitations
+
+- Unmatured labels and diagnostics observed after the cutoff are excluded.
+- Every citation must resolve to an evidence ID in the packet.
+- Every candidate group must be classified exactly once.
+- Group-count and conventional-baseline constraints are enforced outside the LLM.
+- Runs are immutable directories with a SHA-256 manifest.
+- Repeating a provider model name does not pin the provider's underlying weights;
+  therefore historical raw outputs and final decisions are retained.
+- V1 consumes prepared diagnostics. Producing those diagnostics from Qlib factor
+  outputs is the next integration boundary and remains deterministic code.

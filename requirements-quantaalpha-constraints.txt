@@ -1,0 +1,5 @@
+# Keep the factor-mining environment compatible with the Aster data layer.
+numpy==1.26.4
+pandas>=2.2,<3
+pyqlib==0.9.7
+rdagent==0.8.0

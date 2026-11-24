@@ -1,0 +1,46 @@
+{
+  "version": "synthetic-smoke-registry-v1",
+  "universe": "CSI500_SYNTHETIC_SMOKE",
+  "factors": [
+    {
+      "factor_id": "baseline_rev_5",
+      "factor_group": "conventional_reversal",
+      "description": "Five-session price reversal baseline",
+      "origin": "conventional",
+      "formula": "-TS_PCTCHANGE($close, 5)",
+      "approval_status": "approved"
+    },
+    {
+      "factor_id": "baseline_low_vol_20",
+      "factor_group": "conventional_low_vol",
+      "description": "Negative twenty-session realized volatility baseline",
+      "origin": "conventional",
+      "formula": "-TS_STD($return, 20)",
+      "approval_status": "approved"
+    },
+    {
+      "factor_id": "pv_a01_shock_reversal",
+      "factor_group": "shock_reversal",
+      "description": "Abnormal-volume price-shock reversal",
+      "origin": "quantaalpha",
+      "formula": "-TS_ZSCORE($return,20)*TS_ZSCORE(LOG($volume+1),20)",
+      "approval_status": "approved"
+    },
+    {
+      "factor_id": "pv_a04_volume_momentum",
+      "factor_group": "volume_confirmed_momentum",
+      "description": "Medium-term momentum confirmed by persistent relative volume",
+      "origin": "quantaalpha",
+      "formula": "TS_PCTCHANGE($close,20)*TS_ZSCORE(TS_MEAN(LOG($volume+1),5),60)",
+      "approval_status": "approved"
+    },
+    {
+      "factor_id": "unmatured_demo_factor",
+      "factor_group": "unmatured_demo",
+      "description": "Synthetic factor used to verify point-in-time exclusion",
+      "origin": "test-only",
+      "formula": "$return",
+      "approval_status": "approved"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "as_of_close": "2024-12-31",
+  "benchmark": "SH000905",
+  "benchmark_return_20": -0.021,
+  "benchmark_return_60": 0.034,
+  "benchmark_volatility_20": 0.19,
+  "breadth_above_60d_average": 0.43,
+  "cross_section_dispersion_20": 0.087,
+  "average_pairwise_correlation_60": 0.32,
+  "source_ids": ["market:synthetic-smoke:2024-12-31"],
+  "limitations": ["Synthetic smoke values; do not use for investment research"]
+}
