@@ -13,6 +13,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 from aster_data.factor_library import (
     LifecycleStatus,
     build_factor_library,
+    evaluate_quantaalpha_candidates,
     export_council_inputs,
     load_catalog,
     set_factor_status,
@@ -44,6 +45,19 @@ def parser() -> argparse.ArgumentParser:
     export = commands.add_parser("export-council")
     export.add_argument("--mode", choices=["research", "showcase"], default="research")
     export.add_argument("--output", type=Path, required=True)
+    quanta = commands.add_parser("evaluate-quanta")
+    quanta.add_argument(
+        "--market", type=Path,
+        default=PROJECT_ROOT / "data/curated/market/daily.parquet",
+    )
+    quanta.add_argument(
+        "--evidence-root", type=Path,
+        default=PROJECT_ROOT / "data/council/quanta_evidence",
+    )
+    quanta.add_argument("--as-of", required=True)
+    quanta.add_argument("--horizon", type=int, default=20)
+    quanta.add_argument("--min-coverage", type=float, default=0.75)
+    quanta.add_argument("--min-observations", type=int, default=24)
     return root
 
 
@@ -92,6 +106,17 @@ def main() -> None:
             catalog_path=output_root / "catalog.json",
             output_root=args.output,
             mode=args.mode,
+        )
+    elif args.command == "evaluate-quanta":
+        payload = evaluate_quantaalpha_candidates(
+            project_root=PROJECT_ROOT,
+            catalog_path=output_root / "catalog.json",
+            market_path=args.market,
+            evidence_root=args.evidence_root,
+            as_of=args.as_of,
+            horizon=args.horizon,
+            min_coverage=args.min_coverage,
+            min_observations=args.min_observations,
         )
     else:
         catalog = load_catalog(output_root / "catalog.json")

@@ -16,6 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from aster_portfolio.factors import PRICE_VOLUME_FACTOR_DEFINITIONS
 
+from .factor_evidence import evaluate_factors
 from .factor_store import FACTOR_COLUMNS
 from .io import instrument_from_code, sha256_file, write_json_atomic
 
@@ -200,6 +201,20 @@ def _diagnostic_summary(item: dict[str, Any] | None) -> dict[str, Any]:
     return {key: item.get(key) for key in keys if key in item}
 
 
+def _quanta_metric(backtest: dict[str, Any], *names: str) -> Any:
+    """Read QuantaAlpha metrics across its historical key spellings."""
+
+    normalized = {
+        re.sub(r"[^a-z0-9]+", "", str(key).lower()): value
+        for key, value in backtest.items()
+    }
+    for name in names:
+        key = re.sub(r"[^a-z0-9]+", "", name.lower())
+        if key in normalized:
+            return normalized[key]
+    return None
+
+
 def _record_from_registry(
     *,
     item: dict[str, Any],
@@ -337,8 +352,12 @@ def _quanta_records(
                 demo_eligible=True,
                 artifact=artifact,
                 diagnostics={
-                    "ic": backtest.get("ic"),
-                    "rank_ic": backtest.get("rank_ic"),
+                    "ic": _quanta_metric(backtest, "ic"),
+                    "ic_ir": _quanta_metric(backtest, "icir", "ic_ir"),
+                    "rank_ic": _quanta_metric(backtest, "rank ic", "rank_ic"),
+                    "rank_ic_ir": _quanta_metric(
+                        backtest, "rank icir", "rank_ic_ir"
+                    ),
                     "ai_feedback_decision": feedback.get("decision"),
                 },
                 tags=["price_volume", "ai_mined", "quantaalpha"],
@@ -375,6 +394,33 @@ def _write_catalog(catalog: FactorCatalog, output_root: Path) -> None:
         "catalog_parquet_sha256": sha256_file(output_root / "catalog.parquet"),
     }
     write_json_atomic(output_root / "manifest.json", manifest)
+
+
+def _merge_previous_record(record: FactorRecord, previous: FactorRecord) -> FactorRecord:
+    """Keep governance state without carrying stale QuantaAlpha evidence forward."""
+
+    update: dict[str, Any] = {
+        "lifecycle_status": previous.lifecycle_status,
+        "status_reason": previous.status_reason,
+        "research_eligible": previous.research_eligible,
+        "demo_eligible": previous.demo_eligible,
+    }
+    if record.origin == "quantaalpha":
+        if record.artifact.sha256 == previous.artifact.sha256:
+            # Preserve canonical Aster diagnostics while refreshing metrics copied
+            # from the latest QuantaAlpha library JSON.
+            update["diagnostics"] = {**previous.diagnostics, **record.diagnostics}
+        else:
+            update.update(
+                {
+                    "lifecycle_status": LifecycleStatus.CANDIDATE,
+                    "status_reason": (
+                        "QuantaAlpha values changed; canonical diagnostics must be rerun"
+                    ),
+                    "research_eligible": False,
+                }
+            )
+    return record.model_copy(update=update)
 
 
 def build_factor_library(
@@ -434,14 +480,7 @@ def build_factor_library(
         previous = FactorCatalog.model_validate_json(previous_path.read_text(encoding="utf-8"))
         previous_by_id = {factor.factor_id: factor for factor in previous.factors}
         records = [
-            record.model_copy(
-                update={
-                    "lifecycle_status": previous_by_id[record.factor_id].lifecycle_status,
-                    "status_reason": previous_by_id[record.factor_id].status_reason,
-                    "research_eligible": previous_by_id[record.factor_id].research_eligible,
-                    "demo_eligible": previous_by_id[record.factor_id].demo_eligible,
-                }
-            )
+            _merge_previous_record(record, previous_by_id[record.factor_id])
             if record.factor_id in previous_by_id else record
             for record in records
         ]
@@ -556,6 +595,132 @@ def load_factor_values(
         raise KeyError(f"unknown factor_id: {factor_id}")
     frame = pd.read_parquet(project_root / factor.artifact.path)
     return frame.loc[frame["factor_id"].astype(str) == factor_id, FACTOR_COLUMNS].copy()
+
+
+def evaluate_quantaalpha_candidates(
+    *,
+    project_root: Path,
+    catalog_path: Path,
+    market_path: Path,
+    evidence_root: Path,
+    as_of: str,
+    horizon: int = 20,
+    min_coverage: float = 0.75,
+    min_observations: int = 24,
+) -> dict[str, Any]:
+    """Run canonical Aster diagnostics and promote ready QuantaAlpha candidates.
+
+    QuantaAlpha's own feedback remains provenance only. Research eligibility is
+    based on the same deterministic coverage and matured-label readiness gates
+    used by the Factor Council; predictive strength is still judged by Council.
+    """
+
+    project_root = project_root.resolve()
+    catalog_path = catalog_path.resolve()
+    catalog = load_catalog(catalog_path)
+    candidates = [factor for factor in catalog.factors if factor.origin == "quantaalpha"]
+    if not candidates:
+        raise ValueError("catalog contains no QuantaAlpha factors")
+    factor_paths = sorted(
+        {(project_root / factor.artifact.path).resolve() for factor in candidates}
+    )
+    _, diagnostics = evaluate_factors(
+        factor_paths=factor_paths,
+        market_path=market_path.resolve(),
+        output_root=evidence_root.resolve(),
+        as_of=as_of,
+        horizon=horizon,
+    )
+    by_id = {item["factor_id"]: item for item in diagnostics["factors"]}
+    updated: list[FactorRecord] = []
+    promoted: list[str] = []
+    excluded: dict[str, str] = {}
+    for factor in catalog.factors:
+        if factor.origin != "quantaalpha":
+            updated.append(factor)
+            continue
+        diagnostic = by_id.get(factor.factor_id)
+        if diagnostic is None:
+            excluded[factor.factor_id] = "canonical evaluator produced no diagnostics"
+            updated.append(
+                factor.model_copy(
+                    update={
+                        "research_eligible": False,
+                        "status_reason": "Canonical Aster diagnostics are missing",
+                    }
+                )
+            )
+            continue
+        merged = {
+            **factor.diagnostics,
+            **_diagnostic_summary(diagnostic),
+            "yearly_rank_ic": diagnostic.get("yearly_rank_ic", {}),
+            "decay_rank_ic": diagnostic.get("decay_rank_ic", {}),
+            "warnings": diagnostic.get("warnings", []),
+        }
+        ready = (
+            int(diagnostic.get("observations", 0)) >= min_observations
+            and float(diagnostic.get("coverage", 0.0)) >= min_coverage
+        )
+        status = factor.lifecycle_status
+        if ready and status == LifecycleStatus.CANDIDATE:
+            status = LifecycleStatus.VALIDATED
+            promoted.append(factor.factor_id)
+        if not ready:
+            excluded[factor.factor_id] = (
+                f"coverage={float(diagnostic.get('coverage', 0.0)):.4f}, "
+                f"observations={int(diagnostic.get('observations', 0))}"
+            )
+        updated.append(
+            factor.model_copy(
+                update={
+                    "lifecycle_status": status,
+                    "research_eligible": ready,
+                    "status_reason": (
+                        "Canonical Aster diagnostics passed research readiness gates; "
+                        "predictive merit remains subject to Factor Council review"
+                        if ready
+                        else "Canonical Aster diagnostics did not pass research readiness gates"
+                    ),
+                    "diagnostics": merged,
+                }
+            )
+        )
+    new_catalog = FactorCatalog(
+        generated_at=datetime.now().astimezone(),
+        catalog_digest=_canonical_digest(updated),
+        factors=sorted(updated, key=lambda factor: factor.factor_id),
+    )
+    _write_catalog(new_catalog, catalog_path.parent)
+    if promoted:
+        events_path = catalog_path.parent / "lifecycle_events.json"
+        events = _load_json(events_path).get("events", []) if events_path.exists() else []
+        changed_at = datetime.now().astimezone().isoformat()
+        events.extend(
+            {
+                "factor_id": factor_id,
+                "from_status": LifecycleStatus.CANDIDATE.value,
+                "to_status": LifecycleStatus.VALIDATED.value,
+                "reason": "Canonical Aster diagnostics passed research readiness gates",
+                "actor": "canonical-quanta-evaluator",
+                "changed_at": changed_at,
+                "catalog_digest": new_catalog.catalog_digest,
+            }
+            for factor_id in sorted(promoted)
+        )
+        write_json_atomic(events_path, {"events": events})
+    result = {
+        "status": "ok",
+        "as_of": as_of,
+        "horizon": horizon,
+        "evaluated": len(candidates),
+        "promoted": sorted(promoted),
+        "excluded": excluded,
+        "catalog_digest": new_catalog.catalog_digest,
+        "evidence_root": str(evidence_root.resolve()),
+    }
+    write_json_atomic(evidence_root / "catalog_update.json", result)
+    return result
 
 
 def export_council_inputs(

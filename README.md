@@ -226,6 +226,9 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run_quantaalpha.ps1 `
 python .\scripts\manage_factor_library.py build
 python .\scripts\manage_factor_library.py validate
 python .\scripts\manage_factor_library.py list
+python .\scripts\manage_factor_library.py evaluate-quanta `
+  --as-of 2026-11-24 `
+  --evidence-root .\data\council\quanta_evidence_2026
 python .\scripts\manage_factor_library.py export-council `
   --mode research `
   --output .\data\curated\factor_library\exports\research
