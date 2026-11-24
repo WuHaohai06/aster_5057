@@ -5,6 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 from aster_quantalpha.data_adapter import (
+    MARKET_RETURN_COLUMN,
     QuantaAlphaDataAdapter,
     to_qlib_instrument,
     to_trading_date,
@@ -47,6 +48,50 @@ class QuantaAlphaAdapterTest(unittest.TestCase):
         )
         self.assertEqual(parsed.tolist(), [pd.Timestamp("2024-01-02"), pd.Timestamp("2024-01-03")])
         self.assertIsNone(parsed.dt.tz)
+
+    def test_market_return_is_broadcast_by_date_without_backfill(self) -> None:
+        index = pd.MultiIndex.from_tuples(
+            [
+                (pd.Timestamp("2024-01-02"), "SH000905"),
+                (pd.Timestamp("2024-01-02"), "SH600000"),
+                (pd.Timestamp("2024-01-03"), "SH600000"),
+                (pd.Timestamp("2024-01-02"), "SZ000001"),
+            ],
+            names=["datetime", "instrument"],
+        )
+        panel = pd.DataFrame(
+            {
+                "$open": [1.0] * 4,
+                "$high": [1.0] * 4,
+                "$low": [1.0] * 4,
+                "$close": [1.0] * 4,
+                "$volume": [1.0] * 4,
+                "$return": [0.012, 0.02, -0.01, 0.03],
+            },
+            index=index,
+        )
+        result = QuantaAlphaDataAdapter.attach_market_return(panel)
+        self.assertNotIn("SH000905", result.index.get_level_values("instrument"))
+        self.assertEqual(
+            result.loc[(pd.Timestamp("2024-01-02"), "SH600000"), MARKET_RETURN_COLUMN],
+            0.012,
+        )
+        self.assertEqual(
+            result.loc[(pd.Timestamp("2024-01-02"), "SZ000001"), MARKET_RETURN_COLUMN],
+            0.012,
+        )
+        self.assertTrue(
+            pd.isna(
+                result.loc[
+                    (pd.Timestamp("2024-01-03"), "SH600000"),
+                    MARKET_RETURN_COLUMN,
+                ]
+            )
+        )
+        self.assertLess(
+            result.columns.get_loc(MARKET_RETURN_COLUMN),
+            result.columns.get_loc("$return"),
+        )
 
 
 if __name__ == "__main__":

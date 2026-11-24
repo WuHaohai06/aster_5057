@@ -1,6 +1,6 @@
 param(
     [string]$RunId = "",
-    [int]$StepN = 3,
+    [int]$StepN = 5,
     [string]$Model = "deepseek-flash",
     [string]$BaseUrl = "https://api.deepseek.com"
 )

@@ -17,6 +17,7 @@ import pandas as pd
 
 PRICE_COLUMNS = ("open", "high", "low", "close")
 HDF_COLUMNS = ("$open", "$high", "$low", "$close", "$volume", "$return")
+MARKET_RETURN_COLUMN = "$market_return"
 
 
 def to_trading_date(values: pd.Series) -> pd.Series:
@@ -89,9 +90,7 @@ class QuantaAlphaDataAdapter:
         benchmark = qlib_panel.loc[
             qlib_panel.index.get_level_values("instrument") == "SH000905"
         ]
-        panel = qlib_panel.loc[
-            qlib_panel.index.get_level_values("instrument") != "SH000905"
-        ]
+        panel = self.attach_market_return(qlib_panel, benchmark_instrument="SH000905")
         if panel.empty:
             raise RuntimeError("Market adapter produced no constituent rows after benchmark exclusion")
 
@@ -117,6 +116,11 @@ class QuantaAlphaDataAdapter:
                 self.raw_root / "csi500_snapshots",
                 qlib_dir / "instruments" / "csi500.txt",
             )
+        else:
+            existing_qlib = output_root / "qlib" / "cn_data"
+            existing_membership = existing_qlib / "instruments" / "csi500.txt"
+            qlib_dir = existing_qlib if existing_qlib.exists() else None
+            membership_file = existing_membership if existing_membership.exists() else None
 
         manifest_path = output_root / "manifest.json"
         expected_path = self.raw_root / "csi500_historical_union.csv"
@@ -143,6 +147,10 @@ class QuantaAlphaDataAdapter:
             "benchmark": "SH000905",
             "benchmark_rows": len(benchmark),
             "benchmark_in_factor_hdf": False,
+            "market_return_in_factor_hdf": MARKET_RETURN_COLUMN in panel.columns,
+            "market_return_coverage_ratio": round(
+                float(panel[MARKET_RETURN_COLUMN].notna().mean()), 6
+            ),
             "date_start": str(panel.index.get_level_values("datetime").min().date()),
             "date_end": str(panel.index.get_level_values("datetime").max().date()),
             "index_names": list(panel.index.names),
@@ -150,6 +158,10 @@ class QuantaAlphaDataAdapter:
             "price_semantics": "Yahoo OHLC multiplied by adjclose/close; close equals adjclose",
             "volume_semantics": "Yahoo raw reported volume; not dividend-adjusted",
             "return_semantics": "per-instrument adjusted-close pct_change; first observation is 0",
+            "market_return_semantics": (
+                "SH000905 adjusted-close pct_change broadcast by trading date; "
+                "missing benchmark dates remain null and are never backfilled"
+            ),
             "membership_semantics": "weekly PIT candidate from Qlib/Baostock snapshots",
             "full_hdf": str(full_hdf.resolve()),
             "full_hdf_sha256": self._sha256(full_hdf),
@@ -204,6 +216,50 @@ class QuantaAlphaDataAdapter:
         panel = panel.set_index(["datetime", "instrument"]).sort_index()
         panel = panel.loc[:, list(HDF_COLUMNS)].astype("float64")
         return panel
+
+    @staticmethod
+    def attach_market_return(
+        panel: pd.DataFrame, *, benchmark_instrument: str = "SH000905"
+    ) -> pd.DataFrame:
+        """Broadcast the PIT benchmark return to each constituent row by date.
+
+        The benchmark instrument itself is excluded from the returned factor panel.
+        Missing benchmark dates stay missing so the adapter never introduces a
+        forward-filled market observation.
+        """
+        instruments = panel.index.get_level_values("instrument")
+        benchmark = panel.loc[instruments == benchmark_instrument, "$return"]
+        constituents = panel.loc[instruments != benchmark_instrument].copy()
+        if benchmark.empty:
+            constituents[MARKET_RETURN_COLUMN] = np.nan
+            ordered_columns = [
+                "$open",
+                "$high",
+                "$low",
+                "$close",
+                "$volume",
+                MARKET_RETURN_COLUMN,
+                "$return",
+            ]
+            return constituents.loc[:, ordered_columns]
+        benchmark = benchmark.reset_index(level="instrument", drop=True)
+        benchmark = benchmark[~benchmark.index.duplicated(keep="last")]
+        benchmark.name = MARKET_RETURN_COLUMN
+        result = constituents.join(benchmark, on="datetime")
+        # Keep longer variable names before their suffixes.  QuantaAlpha's
+        # generated factor template substitutes source columns in HDF order;
+        # placing ``$market_return`` before ``$return`` prevents the latter
+        # from being substituted inside the former.
+        ordered_columns = [
+            "$open",
+            "$high",
+            "$low",
+            "$close",
+            "$volume",
+            MARKET_RETURN_COLUMN,
+            "$return",
+        ]
+        return result.loc[:, ordered_columns]
 
     @staticmethod
     def write_qlib_csv(panel: pd.DataFrame, target_dir: Path) -> None:
@@ -297,7 +353,9 @@ class QuantaAlphaDataAdapter:
             "# Aster QuantaAlpha factor input\n\n"
             "`daily_pv.h5` uses HDF key `data`, MultiIndex "
             "`(datetime, instrument)`, and columns `$open`, `$high`, `$low`, "
-            "`$close`, `$volume`, `$return`. See the deployment manifest for semantics.\n",
+            "`$close`, `$volume`, `$return`, `$market_return`. `$market_return` "
+            "is the same-date SH000905 return and is never backfilled. See the "
+            "deployment manifest for semantics.\n",
             encoding="utf-8",
         )
 

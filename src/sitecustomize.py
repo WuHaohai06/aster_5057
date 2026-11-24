@@ -7,8 +7,10 @@ QuantaAlpha runner explicitly sets ``ASTER_WINDOWS_LINK_FALLBACK=1``.
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
+import time
 from pathlib import Path
 from typing import Any
 
@@ -117,3 +119,107 @@ if os.name == "nt" and os.environ.get("ASTER_WINDOWS_LINK_FALLBACK") == "1":
 
     Path.symlink_to = _symlink_to
     Path.unlink = _unlink
+
+    # RD-Agent's LocalEnv wraps every command with POSIX `/bin/sh` and
+    # `/usr/bin/timeout`, then rewrites PATH using `:` separators.  That is
+    # correct for Linux but makes otherwise valid local factor workspaces fail
+    # before their Python code runs on Windows.  Keep the patch process-scoped
+    # and replace only LocalEnv's execution primitive; Docker environments are
+    # untouched.
+    try:
+        from rdagent.utils.env import LocalEnv
+
+        _posix_wrapper = re.compile(
+            r"^/bin/sh -c '(?:timeout --kill-after=10 (?P<timeout>\d+) )?"
+            r"(?P<command>.*); entry_exit_code=\$\?; exit \$entry_exit_code'$",
+            re.DOTALL,
+        )
+
+        def _windows_local_run(
+            self: Any,
+            entry: str | None = None,
+            local_path: str | None = None,
+            env: dict[str, Any] | None = None,
+            running_extra_volume: Any = None,
+            **_: Any,
+        ) -> tuple[str, int]:
+            if entry is None:
+                entry = self.conf.default_entry
+            match = _posix_wrapper.match(entry)
+            timeout = self.conf.running_timeout_period
+            if match:
+                entry = match.group("command")
+                if match.group("timeout"):
+                    timeout = int(match.group("timeout"))
+            process_env = os.environ.copy()
+            process_env.update(
+                {str(key): str(value) for key, value in (env or {}).items()}
+            )
+            started = time.monotonic()
+            try:
+                result = subprocess.run(
+                    entry,
+                    cwd=str(Path(local_path).resolve()) if local_path else None,
+                    env=process_env,
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                    shell=True,
+                    timeout=timeout,
+                    check=False,
+                )
+                combined = (result.stdout or "") + (result.stderr or "")
+                return combined, result.returncode
+            except subprocess.TimeoutExpired as error:
+                output = error.stdout or ""
+                stderr = error.stderr or ""
+                if isinstance(output, bytes):
+                    output = output.decode("utf-8", errors="replace")
+                if isinstance(stderr, bytes):
+                    stderr = stderr.decode("utf-8", errors="replace")
+                elapsed = time.monotonic() - started
+                return (
+                    f"{output}{stderr}\nLocal command timed out after {elapsed:.1f}s.",
+                    124,
+                )
+
+        LocalEnv._run = _windows_local_run
+    except Exception:
+        pass
+
+    # QuantaAlpha's upstream factor template performs sequential string
+    # replacement.  With both ``$market_return`` and ``$return`` present, the
+    # second replacement can corrupt the code inserted by the first.  Patch
+    # rendered factor scripts in-process so the compatibility fix also applies
+    # when the ignored vendor tree is freshly installed on another machine.
+    try:
+        from quantaalpha.core.template import CodeTemplate
+
+        _original_template_render = CodeTemplate.render
+        _unsafe_binding = """    # replace '$var' by 'df['var'] to extract var's actual values
+    for col in df.columns:
+        expr = expr.replace(col[1:], f\"df[\\'{col}\\']\")
+"""
+        _safe_binding = """    # Bind overlapping source names in one regex pass.
+    source_columns = [col for col in df.columns if col.startswith('$')]
+    source_map = {col[1:]: f\"df[\\'{col}\\']\" for col in source_columns}
+    source_pattern = re.compile(
+        r\"(?<![A-Za-z0-9_])(\" + \"|\".join(
+            re.escape(token) for token in sorted(source_map, key=len, reverse=True)
+        ) + r\")(?![A-Za-z0-9_])\"
+    )
+    expr = source_pattern.sub(lambda match: source_map[match.group(1)], expr)
+"""
+
+        def _safe_template_render(self: Any, *args: Any, **kwargs: Any) -> str:
+            rendered = _original_template_render(self, *args, **kwargs)
+            if _unsafe_binding not in rendered:
+                return rendered
+            if "import re\n" not in rendered:
+                rendered = rendered.replace("import os\n", "import os\nimport re\n", 1)
+            return rendered.replace(_unsafe_binding, _safe_binding)
+
+        CodeTemplate.render = _safe_template_render
+    except Exception:
+        pass
