@@ -61,8 +61,8 @@ Factor Council 和 Portfolio Council 都提供两种明确分离的模式：
 | CSI500 历史候选股票池 | 1,273 只 | 来自 Qlib/Baostock 周频历史候选快照，不等同于官方逐次调整清单 |
 | Canonical 日行情 | 1,814,107 行 / 827 只 | 2016-11-24 至 2026-11-24；大部分使用 Yahoo adjusted fallback |
 | 财报 PDF | 7,352 份 | 1,227/1,273 个代码任务完成，46 个代码失败待补漏 |
-| AI-friendly 财报 | 11 份 | 目前是解析与单文档基准；最近三年批处理尚未正式启动 |
-| DeepSeek 财报因子 | 1 份真实基准 | 一次调用约 18.5 秒，返回 4 个有证据因子，1 个维度因证据不足为空 |
+| AI-friendly 财报 | 2025 财年批处理运行中 | 716 份年报采用 6 进程解析；2023、2024 尚未启动 |
+| DeepSeek 财报因子 | 2025 财年任务运行中 | PDF 解析完成后使用 8 并发评分，并逐份记录真实 token usage |
 | 旧 PIT 财务原始数据 | 63,434 行 / 747 只 | 当前只有 `roeWa`、`YOYNI` 两个字段 |
 | 已物化财务因子 | 28,266 行 / 351 只 | 需要用最新 747 只原始数据重新构建 |
 | 市值/估值/三表/行业补充 | 后台运行中 | 目标 1,273 只，顺序为估值、资产负债表、利润表、现金流、行业历史 |
@@ -195,6 +195,17 @@ python .\scripts\generate_filing_text_factors.py `
 ```
 
 LLM 模式要求每个非空评分都包含有效财报页码引用。当前接口一次调用同时评估 management outlook、demand strength、margin resilience、investment intensity 和 uncertainty。
+
+按单个完整财年并行解析并生成 DeepSeek 因子：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start_filing_factor_year.ps1 `
+  -FiscalYear 2025 `
+  -ParseWorkers 6 `
+  -LlmWorkers 8
+```
+
+进度写入 `run/filing_factor_2025/status.json`，最终因子和证据写入 `data/curated/factors/filing_analysis/2025/`。相同财年重新启动会复用已完成的 PDF 和 LLM checkpoints。
 
 ## QuantaAlpha 因子挖掘
 

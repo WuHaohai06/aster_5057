@@ -89,6 +89,7 @@ def _llm_payload(document: dict, *, api_key: str, base_url: str, model: str) -> 
     )
     raw = response.choices[0].message.content or "{}"
     payload = json.loads(raw)
+    usage = getattr(response, "usage", None)
     valid_pages = {page["page"] for page in pages}
     rows = []
     validated: dict[str, Any] = {}
@@ -108,6 +109,11 @@ def _llm_payload(document: dict, *, api_key: str, base_url: str, model: str) -> 
     return rows, {
         "method": "deepseek_structured_filing_v1", "model": model,
         "validated_scores": validated, "raw_response": raw,
+        "usage": {
+            "prompt_tokens": getattr(usage, "prompt_tokens", None),
+            "completion_tokens": getattr(usage, "completion_tokens", None),
+            "total_tokens": getattr(usage, "total_tokens", None),
+        },
     }
 
 
