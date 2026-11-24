@@ -1,0 +1,403 @@
+version: 1
+library_id: aster_csi500_factor_seed_v1
+purpose: >-
+  Independently authored economic hypotheses for hypothesis-led factor mining on
+  the PIT CSI500 universe. External directory links are discovery references,
+  not a copied factor database.
+
+policy:
+  target_universe: csi500_pit
+  default_horizon_days: [5, 20]
+  validation_horizon_days: [1, 5, 10, 20]
+  require_available_at: true
+  forbid_future_data: true
+  forbid_static_latest_constituents: true
+  require_mechanism_review: true
+  require_falsification_test: true
+  generation_rule: one_seed_per_run
+  source_policy: >-
+    Do not scrape or reproduce external factor directories. Retain links only as
+    manual discovery references and implement every candidate independently.
+
+readiness_levels:
+  ready_market: Can run with current OHLCV, PIT universe and SH000905 benchmark.
+  ready_after_valuation: Requires completed market-cap or share-count inputs.
+  ready_after_statements: Requires PIT financial statements joined by public notice date.
+
+seeds:
+  - id: beta_shrunk_rolling
+    family: Beta
+    name_zh: 收缩滚动Beta
+    readiness: ready_market
+    hypothesis: >-
+      Stocks with persistently lower, more reliably estimated market beta earn
+      better subsequent risk-adjusted returns than unstable high-beta stocks.
+    mechanism: >-
+      Leverage constraints and demand for lottery-like upside can make high-beta
+      stocks expensive, while shrinkage reduces estimation noise in raw beta.
+    formula_seed: >-
+      -(0.6 * beta_252 + 0.4 * 1.0), where beta_252 is estimated only with
+      returns available at the signal date; also test cross-sectional-mean shrinkage.
+    required_inputs: [stock_return, sh000905_return]
+    formation_windows: [120, 252]
+    expected_direction: Higher factor value means lower shrunk beta and higher expected risk-adjusted return.
+    falsification_tests:
+      - Compare raw and shrunk beta out of sample.
+      - Neutralize size and industry when those fields become available.
+      - Reject if performance exists only in one market regime.
+    failure_regimes: [sharp_liquidity_rallies, speculative_high_beta_cycles]
+
+  - id: beta_downside_asymmetry
+    family: Beta
+    name_zh: 下行Beta不对称
+    readiness: ready_market
+    hypothesis: >-
+      Stocks whose sensitivity is disproportionately high on benchmark down days
+      subsequently underperform stocks with similar full-sample beta but lower downside beta.
+    mechanism: >-
+      Down-market covariance captures funding and forced-selling exposure that an
+      unconditional beta estimate can hide.
+    formula_seed: -(beta_down_120 - beta_up_120)
+    required_inputs: [stock_return, sh000905_return]
+    formation_windows: [60, 120, 252]
+    expected_direction: Higher factor value means less downside-beta asymmetry.
+    falsification_tests:
+      - Require enough up and down benchmark observations in every window.
+      - Compare against unconditional beta and residual volatility.
+      - Test whether the signal survives excluding crash months.
+    failure_regimes: [very_low_volatility_markets, too_few_down_days]
+
+  - id: beta_instability
+    family: Beta
+    name_zh: Beta稳定性
+    readiness: ready_market
+    hypothesis: >-
+      A large gap between short- and long-window beta or high variation in rolling
+      beta signals unstable systematic exposure and weaker subsequent performance.
+    mechanism: >-
+      Rapidly changing beta can proxy for business-model uncertainty, leverage
+      changes or transient crowding that is not captured by a single beta level.
+    formula_seed: -(abs(beta_60 - beta_252) + std(rolling_beta_60, 120))
+    required_inputs: [stock_return, sh000905_return]
+    formation_windows: [60, 120, 252]
+    expected_direction: Higher factor value means more stable beta.
+    falsification_tests:
+      - Separate estimation noise from persistent beta change.
+      - Require minimum return coverage and winsorize beta estimates.
+      - Compare stability with realised future drawdown and return separately.
+    failure_regimes: [recent_listings, structural_business_changes]
+
+  - id: momentum_rank_persistence
+    family: Momentum
+    name_zh: 排序动量持续性
+    readiness: ready_market
+    discovery_reference: https://factors.directory/zh/factors/momentum/momentum-based-on-ranking
+    hypothesis: >-
+      Stocks that repeatedly rank near the top of the PIT universe on daily or
+      weekly returns continue to outperform, even when individual extreme returns are downweighted.
+    mechanism: >-
+      Gradual information diffusion creates persistent relative ordering; rank
+      aggregation is less sensitive to outliers than cumulative raw return.
+    formula_seed: mean(cs_rank(daily_return), lookback=120, skip_recent=20)
+    required_inputs: [stock_return, csi500_pit_membership]
+    formation_windows: [60, 120, 252]
+    expected_direction: Higher persistent rank predicts higher subsequent return.
+    falsification_tests:
+      - Compare with ordinary cumulative-return momentum.
+      - Test skip periods of 0, 5 and 20 sessions.
+      - Reject if results depend on a few limit-up observations.
+    failure_regimes: [sharp_reversals, policy_shocks]
+
+  - id: momentum_market_residual
+    family: Momentum
+    name_zh: 市场残差动量
+    readiness: ready_market
+    hypothesis: >-
+      Momentum in returns unexplained by contemporaneous market beta is more
+      stock-specific and persists more reliably than raw momentum.
+    mechanism: >-
+      Removing benchmark-driven returns isolates gradual firm-specific information
+      diffusion and reduces accidental high-beta exposure.
+    formula_seed: sum(stock_return - beta_252 * sh000905_return, 120, skip_recent=20)
+    required_inputs: [stock_return, sh000905_return]
+    formation_windows: [120, 252]
+    expected_direction: Higher residual momentum predicts higher subsequent return.
+    falsification_tests:
+      - Compare with raw momentum at identical windows.
+      - Re-estimate beta using only prior observations.
+      - Test sensitivity to the beta estimation window.
+    failure_regimes: [firm_specific_reversals, event_driven_gaps]
+
+  - id: momentum_path_quality
+    family: Momentum
+    name_zh: 路径质量动量
+    readiness: ready_market
+    hypothesis: >-
+      A smooth sequence of same-direction returns is more likely to continue than
+      the same cumulative return produced by a few jumps.
+    mechanism: >-
+      Smooth paths are consistent with gradual information absorption, whereas
+      jump-dominated paths are more likely to reflect temporary attention shocks.
+    formula_seed: sum(return, 120) * abs(sum(return, 120)) / (sum(abs(return), 120) + 1e-8)
+    required_inputs: [stock_return]
+    formation_windows: [60, 120, 252]
+    expected_direction: Smoother positive paths receive larger positive values.
+    falsification_tests:
+      - Control for cumulative return and realised volatility.
+      - Exclude the largest one and three daily moves.
+      - Test positive and negative trends separately.
+    failure_regimes: [earnings_gap_cycles, discontinuous_policy_events]
+
+  - id: residual_volatility_idiosyncratic
+    family: Residual Volatility
+    name_zh: 特异波动率
+    readiness: ready_market
+    hypothesis: >-
+      Stocks with lower volatility after removing market beta earn better subsequent
+      risk-adjusted returns than stocks with highly volatile residual returns.
+    mechanism: >-
+      Preference for lottery-like payoffs and limits to arbitrage can overprice
+      high-idiosyncratic-volatility stocks.
+    formula_seed: -std(stock_return - beta_252 * sh000905_return, 60)
+    required_inputs: [stock_return, sh000905_return]
+    formation_windows: [60, 120, 252]
+    expected_direction: Higher factor value means lower idiosyncratic volatility.
+    falsification_tests:
+      - Compare with total volatility and beta.
+      - Test value-weighted and equal-weighted portfolios.
+      - Reject if driven only by micro-cap stocks after size data arrives.
+    failure_regimes: [speculative_rallies, volatility_rebounds]
+
+  - id: residual_volatility_downside
+    family: Residual Volatility
+    name_zh: 残差下行波动
+    readiness: ready_market
+    hypothesis: >-
+      High downside semideviation in market-adjusted returns predicts weaker
+      subsequent performance more directly than symmetric residual volatility.
+    mechanism: >-
+      Negative residual shocks reveal firm-specific fragility and forced-selling
+      exposure, while positive residual variation may contain useful discovery.
+    formula_seed: -sqrt(mean(min(residual_return, 0)^2, 120))
+    required_inputs: [stock_return, sh000905_return]
+    formation_windows: [60, 120]
+    expected_direction: Higher factor value means lower residual downside risk.
+    falsification_tests:
+      - Compare downside and upside semideviation.
+      - Require a minimum number of negative residual days.
+      - Test after excluding the single worst residual return.
+    failure_regimes: [strong_mean_reversion, sparse_negative_observations]
+
+  - id: residual_volatility_of_volatility
+    family: Residual Volatility
+    name_zh: 残差波动率之波动率
+    readiness: ready_market
+    hypothesis: >-
+      Unstable idiosyncratic volatility is a separate adverse signal beyond the
+      average level of idiosyncratic volatility.
+    mechanism: >-
+      Volatility-of-volatility captures changing information uncertainty and
+      intermittent liquidity stress that a single standard deviation misses.
+    formula_seed: -std(rolling_std(residual_return, 20), 120)
+    required_inputs: [stock_return, sh000905_return]
+    formation_windows: [60, 120]
+    expected_direction: Higher factor value means more stable residual volatility.
+    falsification_tests:
+      - Orthogonalize against mean residual volatility.
+      - Vary the inner volatility window from 10 to 40 sessions.
+      - Test whether the signal survives excluding event months.
+    failure_regimes: [regime_transitions, insufficient_history]
+
+  - id: liquidity_relative_volume_impact
+    family: Liquidity
+    name_zh: 相对成交量价格冲击
+    readiness: ready_market
+    hypothesis: >-
+      Large price moves generated with weak volume relative to the stock's own
+      history indicate shallow liquidity and are more likely to reverse.
+    mechanism: >-
+      When limited trading activity moves price substantially, temporary order
+      imbalance rather than broad information diffusion is a plausible cause.
+    formula_seed: -sign(return) * abs(return) / (exp(ts_zscore(log(volume + 1), 60)) + 1e-8)
+    required_inputs: [stock_return, volume]
+    formation_windows: [20, 60]
+    expected_direction: Positive values represent expected reversal after downward illiquid shocks.
+    falsification_tests:
+      - Standardize volume only within each stock.
+      - Separate positive and negative price shocks.
+      - Apply transaction-cost and limit-move filters.
+    failure_regimes: [fundamental_news, prolonged_distress]
+
+  - id: liquidity_low_volume_persistence
+    family: Liquidity
+    name_zh: 低成交量持续性
+    readiness: ready_market
+    hypothesis: >-
+      Persistent low volume relative to a stock's own history signals weak investor
+      participation and predicts lower near-term tradability and weaker returns.
+    mechanism: >-
+      Sustained attention scarcity raises trading frictions and makes apparent alpha
+      harder to realise after costs.
+    formula_seed: -mean(volume < rolling_quantile(volume, 60, 0.2), 20)
+    required_inputs: [volume]
+    formation_windows: [20, 60]
+    expected_direction: Higher factor value means less persistent low-volume trading.
+    falsification_tests:
+      - Compare raw returns and cost-adjusted returns.
+      - Exclude suspensions and zero-volume data errors.
+      - Test whether the effect reverses at longer horizons.
+    failure_regimes: [temporary_suspensions, newly_listed_stocks]
+
+  - id: liquidity_cap_adjusted_turnover
+    family: Liquidity
+    name_zh: 市值中性化换手率残差
+    readiness: ready_after_valuation
+    discovery_reference: https://factors.directory/zh/factors/liquidity/market-cap-adjusted-turnover
+    hypothesis: >-
+      Turnover unexplained by float market capitalisation contains stock-specific
+      attention and liquidity information.
+    mechanism: >-
+      Removing the mechanical size-turnover relation separates unusual participation
+      from the ordinary tendency of smaller stocks to trade differently.
+    formula_seed: residual(log(mean(volume / float_shares, 20)) ~ log(float_market_cap))
+    required_inputs: [volume, float_shares, float_market_cap]
+    formation_windows: [20, 60]
+    expected_direction: Test both moderate positive residual attention and extreme-residual reversal.
+    falsification_tests:
+      - Fit the cross-sectional regression independently at each signal date.
+      - Compare linear, ranked and winsorized residuals.
+      - Test non-linearity across residual deciles.
+    failure_regimes: [share_structure_changes, stale_float_share_data]
+
+  - id: profitability_cash_conversion
+    family: Profitability
+    name_zh: 盈利现金转化率
+    readiness: ready_after_statements
+    discovery_reference: https://factors.directory/zh/factors/basic-surface/profit-cash-ratio
+    hypothesis: >-
+      Profit supported by operating cash flow is more persistent and predicts
+      stronger subsequent returns than accrual-heavy profit.
+    mechanism: >-
+      Cash conversion is harder to accelerate through accounting estimates and
+      therefore provides a quality check on reported earnings.
+    formula_seed: operating_cash_flow_ttm / (abs(net_income_ttm) + epsilon_scaled)
+    required_inputs: [operating_cash_flow, net_income, notice_date]
+    formation_windows: [ttm]
+    expected_direction: Higher positive cash conversion indicates higher earnings quality.
+    falsification_tests:
+      - Treat negative net income separately rather than relying on a raw ratio.
+      - Winsorize by industry and date.
+      - Compare with accruals and future earnings persistence.
+    failure_regimes: [financial_firms, working_capital_seasonality]
+
+  - id: profitability_gross_assets
+    family: Profitability
+    name_zh: 总资产毛盈利能力
+    readiness: ready_after_statements
+    hypothesis: >-
+      Firms generating more gross profit per unit of assets subsequently outperform
+      firms with weak operating productivity.
+    mechanism: >-
+      Gross profit is upstream of financing and many discretionary expenses, while
+      scaling by assets measures the productivity of the operating asset base.
+    formula_seed: gross_profit_ttm / lagged_total_assets
+    required_inputs: [revenue, operating_cost, total_assets, notice_date]
+    formation_windows: [ttm]
+    expected_direction: Higher gross profitability predicts higher subsequent return.
+    falsification_tests:
+      - Use lagged assets known at the signal date.
+      - Compare within industry and exclude financial firms.
+      - Test whether margins or asset turnover explain the result.
+    failure_regimes: [financial_firms, commodity_price_spikes]
+
+  - id: profitability_stable_roe
+    family: Profitability
+    name_zh: 稳定ROE质量
+    readiness: ready_after_statements
+    hypothesis: >-
+      Persistently high ROE supported by cash flow is more informative than a single
+      high ROE observation.
+    mechanism: >-
+      Stability and cash backing reduce the probability that leverage, one-off gains
+      or accounting choices create a misleading profitability signal.
+    formula_seed: mean(roe, 3y) - lambda1 * std(roe, 3y) + lambda2 * cash_conversion_rank
+    required_inputs: [net_income, shareholder_equity, operating_cash_flow, notice_date]
+    formation_windows: [3y, 5y]
+    expected_direction: Higher stable and cash-backed ROE predicts stronger returns.
+    falsification_tests:
+      - Neutralize leverage when balance-sheet data is ready.
+      - Remove one-off items when available.
+      - Compare single-period ROE with the stability-adjusted form.
+    failure_regimes: [high_leverage, major_asset_disposals]
+
+  - id: growth_revenue_cash_confirmed
+    family: Growth
+    name_zh: 现金确认的收入增长
+    readiness: ready_after_statements
+    hypothesis: >-
+      Revenue growth accompanied by operating cash-flow growth is more persistent
+      than revenue growth unsupported by cash generation.
+    mechanism: >-
+      Cash confirmation reduces exposure to aggressive revenue recognition and
+      receivables-driven growth.
+    formula_seed: yoy(revenue_ttm) * sign(yoy(operating_cash_flow_ttm)) * min(abs(yoy(operating_cash_flow_ttm)), cap)
+    required_inputs: [revenue, operating_cash_flow, notice_date]
+    formation_windows: [ttm_yoy]
+    expected_direction: Positive, cash-confirmed revenue growth predicts higher return.
+    falsification_tests:
+      - Compare revenue growth alone with the cash-confirmed version.
+      - Control for industry growth and base effects.
+      - Reject observations with near-zero denominators.
+    failure_regimes: [early_stage_firms, large_contract_timing]
+
+  - id: growth_asset_conservatism
+    family: Growth
+    name_zh: 资产扩张保守度
+    readiness: ready_after_statements
+    hypothesis: >-
+      Extremely rapid asset growth predicts weaker subsequent returns, while
+      disciplined asset expansion is associated with better capital allocation.
+    mechanism: >-
+      Managers and investors can over-extrapolate expansion opportunities, causing
+      overinvestment and later mean reversion in returns on capital.
+    formula_seed: -yoy(total_assets)
+    required_inputs: [total_assets, notice_date]
+    formation_windows: [annual_yoy]
+    expected_direction: Higher factor value means more conservative asset growth.
+    falsification_tests:
+      - Neutralize industry and firm age.
+      - Separate organic growth from acquisitions when possible.
+      - Test monotonicity rather than assuming a linear relation.
+    failure_regimes: [successful_scale_up, regulated_capacity_cycles]
+
+  - id: growth_net_assets_per_share
+    family: Growth
+    name_zh: 每股净资产增长
+    readiness: ready_after_statements
+    discovery_reference: https://factors.directory/zh/factors/growth/yoy-growth-rate-of-net-assets-per-share
+    hypothesis: >-
+      Growth in net assets per share is more informative than aggregate equity growth
+      because it penalizes dilution from new share issuance.
+    mechanism: >-
+      Per-share scaling distinguishes retained value creation from balance-sheet
+      expansion financed mainly by issuing additional equity.
+    formula_seed: yoy(shareholder_equity / total_shares)
+    required_inputs: [shareholder_equity, total_shares, notice_date]
+    formation_windows: [annual_yoy]
+    expected_direction: Higher PIT net-assets-per-share growth predicts higher return.
+    falsification_tests:
+      - Adjust for splits and other share-count changes.
+      - Compare aggregate equity growth and per-share growth.
+      - Neutralize industry and initial valuation.
+    failure_regimes: [large_buybacks, accounting_revaluations]
+
+discovery_references:
+  - title: Factors Directory Chinese homepage
+    url: https://factors.directory/zh
+  - title: Factors Directory terms of service
+    url: https://factors.directory/zh/terms
+  - title: Conditional Value at Risk factor page
+    url: https://factors.directory/zh/factors/volatility/conditional-value-at-risk
+  - title: Log float market capitalisation factor page
+    url: https://factors.directory/zh/factors/scale/scale-log-market-cap
+

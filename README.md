@@ -217,6 +217,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run_quantaalpha.ps1 `
 ```
 
 经济学假设与可复制 Prompt 见 [docs/quantaalpha_price_volume_hypotheses.md](docs/quantaalpha_price_volume_hypotheses.md)。
+六个因子族的 18 条热启动假设见 [docs/quantaalpha_factor_seed_library.md](docs/quantaalpha_factor_seed_library.md)，
+机器可读配置位于 `config/quantaalpha/hypothesis_seed_library.yaml`。
 
 ## Unified Factor Library
 
