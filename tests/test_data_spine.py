@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from aster_data.akshare_market import normalize_akshare_daily
+from aster_data.akshare_market import normalize_akshare_daily, normalize_sina_daily
 from aster_data.ic_futures import build_lagged_continuous
 from aster_data.io import instrument_from_code
 from aster_data.pit_universe import apply_official_adjustments, snapshots_to_intervals
@@ -37,6 +37,25 @@ class DataSpineTest(unittest.TestCase):
         self.assertEqual(result["instrument"].unique().tolist(), ["SH600519"])
         self.assertEqual(result["date"].tolist(), ["2024-01-02", "2024-01-03"])
         self.assertEqual(result["adjustment"].unique().tolist(), ["hfq"])
+
+    def test_sina_fallback_matches_canonical_contract(self) -> None:
+        frame = pd.DataFrame(
+            {
+                "date": ["2024-01-02", "2024-01-03"],
+                "open": [10.0, 10.2],
+                "high": [10.3, 10.5],
+                "low": [9.9, 10.1],
+                "close": [10.2, 10.4],
+                "volume": [9000, 10000],
+                "amount": [90000, 102000],
+                "turnover": [0.004, 0.005],
+            }
+        )
+        result = normalize_sina_daily(frame, instrument="sh600519", adjustment="hfq")
+        self.assertEqual(result["instrument"].unique().tolist(), ["SH600519"])
+        self.assertEqual(result["volume"].tolist(), [90.0, 100.0])
+        self.assertEqual(result["turnover_pct"].tolist(), [0.4, 0.5])
+        self.assertEqual(result["source"].unique().tolist(), ["akshare_1.20.65_stock_zh_a_hist_sina"])
 
     def test_official_universe_overlay_and_intervals(self) -> None:
         snapshots = pd.DataFrame(
