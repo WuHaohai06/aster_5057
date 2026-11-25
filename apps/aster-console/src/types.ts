@@ -138,5 +138,18 @@ export interface Snapshot {
     needs_ocr?: number;
     updated_at?: string;
     token_usage?: { total_tokens?: number; prompt_tokens?: number; completion_tokens?: number };
+    year_start?: number;
+    year_end?: number;
+    years?: Array<{
+      name: string;
+      year: number;
+      state?: string;
+      score_completed?: number;
+      score_total?: number;
+      documents_total?: number;
+      factor_rows?: number;
+      needs_ocr?: number;
+      updated_at?: string;
+    }>;
   };
 }

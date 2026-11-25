@@ -25,7 +25,7 @@ import {
   TrendingUp,
   X,
 } from "lucide-react";
-import { loadSnapshot } from "./data";
+import { loadSnapshot, subscribeToSnapshotEvents } from "./data";
 import type { Factor, Snapshot, ViewId } from "./types";
 
 const navigation: Array<{ id: ViewId; label: string; icon: typeof Activity }> = [
@@ -122,6 +122,42 @@ function Pipeline({ snapshot, navigate }: { snapshot: Snapshot; navigate: (view:
   );
 }
 
+function jobProgress(job: Record<string, unknown>) {
+  const pairs = [
+    ["completed_artifacts", "total_artifacts"],
+    ["score_completed", "score_total"],
+    ["completed", "total"],
+    ["instrument_index", "instruments"],
+  ];
+  for (const [doneKey, totalKey] of pairs) {
+    const done = Number(job[doneKey]);
+    const total = Number(job[totalKey]);
+    if (Number.isFinite(done) && Number.isFinite(total) && total > 0) {
+      return { done, total, ratio: Math.min(1, Math.max(0, done / total)) };
+    }
+  }
+  return null;
+}
+
+function JobMonitor({ jobs }: { jobs: Snapshot["jobs"] }) {
+  return (
+    <div className="job-grid">
+      {jobs.map((job) => {
+        const progress = jobProgress(job);
+        const state = String(job.state ?? "pending");
+        const updated = typeof job.updated_at === "string" ? job.updated_at : undefined;
+        const stage = typeof job.stage === "string" ? job.stage : undefined;
+        return <article className={`job-card job-${state}`} key={job.name}>
+          <div><span className="job-state-dot" /><StatusPill tone={state === "complete" ? "good" : state === "running" ? "live" : state === "pending" ? "neutral" : "warn"}>{state}</StatusPill></div>
+          <strong>{job.name}</strong>
+          {progress ? <><div className="job-progress"><i style={{ width: `${progress.ratio * 100}%` }} /></div><small>{progress.done.toLocaleString()} / {progress.total.toLocaleString()}{stage ? ` · ${stage}` : ""}</small></> : <small>{stage ?? "No numeric progress reported"}</small>}
+          <time>{updated ? humanDate(updated) : "Not started"}</time>
+        </article>;
+      })}
+    </div>
+  );
+}
+
 function Overview({ snapshot, navigate, openFactor }: {
   snapshot: Snapshot;
   navigate: (view: ViewId) => void;
@@ -171,6 +207,10 @@ function Overview({ snapshot, navigate, openFactor }: {
 
       <Panel title="Research pipeline" kicker="Live system map" action={<StatusPill tone="live">WORKSPACE LIVE</StatusPill>}>
         <Pipeline snapshot={snapshot} navigate={navigate} />
+      </Panel>
+
+      <Panel title="Background jobs" kicker="Live sanitised status" action={<StatusPill tone="live">AUTO REFRESH</StatusPill>}>
+        <JobMonitor jobs={snapshot.jobs} />
       </Panel>
 
       <div className="two-column">
@@ -352,6 +392,7 @@ function Filings({ snapshot }: { snapshot: Snapshot }) {
   const parsed = filing.parse_completed ?? 0;
   const documents = filing.documents_total ?? 0;
   const progress = total ? score / total : 0;
+  const years = filing.years ?? [];
   const dimensions = [
     ["Management outlook", "Forward-looking strategy and operating confidence"],
     ["Demand strength", "Evidence of product and market demand"],
@@ -359,7 +400,7 @@ function Filings({ snapshot }: { snapshot: Snapshot }) {
     ["Capex intensity", "Investment burden and expansion intensity"],
     ["Risk level", "Disclosed operating and balance-sheet risks"],
   ];
-  return <div className="view-stack"><div className="page-heading"><div><span className="eyebrow">DOCUMENT → AI-FRIENDLY EVIDENCE → FACTOR ROWS</span><h1>Filing Intelligence</h1><p>财报原文经过结构化解析、引用定位和 DeepSeek 评分，最终转换为 PIT 因子记录。</p></div><StatusPill tone={score < total ? "live" : "good"}>{score < total ? "SCORING LIVE" : "COMPLETE"}</StatusPill></div><section className="filing-progress"><div className="progress-copy"><span>2025 ANNUAL REPORT BATCH</span><strong>{percent(progress)}</strong><p>{score} of {total} scoreable reports completed</p></div><div className="radial-progress" style={{ "--progress": `${progress * 360}deg` } as CSSProperties}><div><FileSearch size={25} /><strong>{score}</strong><span>SCORED</span></div></div></section><div className="metric-grid"><MetricCard label="PARSED DOCUMENTS" value={`${parsed}/${documents}`} detail={`${filing.parse_failures ?? 0} parse failure`} /><MetricCard label="GENERATED FACTOR ROWS" value={compact(filing.factor_rows)} detail="five dimensions per successful report" tone="green" /><MetricCard label="TOKEN USAGE" value={compact(filing.token_usage?.total_tokens)} detail="prompt + completion" tone="violet" /><MetricCard label="OCR QUEUE" value={String(filing.needs_ocr ?? 0)} detail="documents requiring fallback" tone="amber" /></div><Panel title="Financial narrative dimensions" kicker="Structured AI output"><div className="dimension-grid">{dimensions.map(([name, description], index) => <article key={name}><span>{String(index + 1).padStart(2, "0")}</span><div><strong>{name}</strong><p>{description}</p></div></article>)}</div></Panel><div className="notice-banner neutral"><ShieldCheck size={18} /><div><strong>Every score retains source-document lineage and page citations.</strong><span>Scores become usable only from the filing's public availability date.</span></div></div></div>;
+  return <div className="view-stack"><div className="page-heading"><div><span className="eyebrow">DOCUMENT → AI-FRIENDLY EVIDENCE → FACTOR ROWS</span><h1>Filing Intelligence</h1><p>财报原文经过结构化解析、引用定位和 DeepSeek 评分，最终转换为 PIT 因子记录。</p></div><StatusPill tone={score < total ? "live" : "good"}>{score < total ? "SCORING LIVE" : "COMPLETE"}</StatusPill></div><section className="filing-progress"><div className="progress-copy"><span>{filing.year_start ?? 2020}-{filing.year_end ?? 2025} ANNUAL REPORT BATCHES</span><strong>{percent(progress)}</strong><p>{score} of {total} scoreable reports completed</p></div><div className="radial-progress" style={{ "--progress": `${progress * 360}deg` } as CSSProperties}><div><FileSearch size={25} /><strong>{score}</strong><span>SCORED</span></div></div></section><div className="metric-grid"><MetricCard label="PARSED DOCUMENTS" value={`${parsed}/${documents}`} detail={`${filing.parse_failures ?? 0} parse failure`} /><MetricCard label="GENERATED FACTOR ROWS" value={compact(filing.factor_rows)} detail="five dimensions per successful report" tone="green" /><MetricCard label="TOKEN USAGE" value={compact(filing.token_usage?.total_tokens)} detail="prompt + completion" tone="violet" /><MetricCard label="OCR QUEUE" value={String(filing.needs_ocr ?? 0)} detail="documents requiring fallback" tone="amber" /></div>{years.length > 0 && <Panel title="Annual batches" kicker="2020-2025 completion ledger"><div className="filing-years">{years.map((year) => { const done = year.score_completed ?? 0; const count = year.score_total ?? year.documents_total ?? 0; return <article key={year.year}><span>{year.year}</span><strong>{done}/{count}</strong><small>{compact(year.factor_rows)} factor rows</small><StatusPill tone={year.state === "complete" ? "good" : "live"}>{year.state ?? "pending"}</StatusPill></article>; })}</div></Panel>}<Panel title="Financial narrative dimensions" kicker="Structured AI output"><div className="dimension-grid">{dimensions.map(([name, description], index) => <article key={name}><span>{String(index + 1).padStart(2, "0")}</span><div><strong>{name}</strong><p>{description}</p></div></article>)}</div></Panel><div className="notice-banner neutral"><ShieldCheck size={18} /><div><strong>Every score retains source-document lineage and page citations.</strong><span>Scores become usable only from the filing's public availability date.</span></div></div></div>;
 }
 
 function App() {
@@ -369,9 +410,37 @@ function App() {
   const [mode, setMode] = useState<"research" | "showcase">("research");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [factor, setFactor] = useState<Factor | null>(null);
+  const [connection, setConnection] = useState<"connecting" | "live" | "polling" | "snapshot" | "offline">("connecting");
+  const [lastSync, setLastSync] = useState<Date | null>(null);
 
   useEffect(() => {
-    loadSnapshot().then(setSnapshot).catch((reason: Error) => setError(reason.message));
+    let disposed = false;
+    const refresh = async (initial = false) => {
+      try {
+        const result = await loadSnapshot();
+        if (disposed) return;
+        setSnapshot(result.snapshot);
+        setConnection(result.source === "live" ? "live" : "snapshot");
+        setLastSync(new Date());
+        setError("");
+      } catch (reason) {
+        if (disposed) return;
+        setConnection("offline");
+        if (initial) setError(reason instanceof Error ? reason.message : String(reason));
+      }
+    };
+    void refresh(true);
+    const stopEvents = subscribeToSnapshotEvents(
+      () => void refresh(),
+      () => setConnection("live"),
+      () => setConnection((state) => state === "snapshot" ? state : "polling"),
+    );
+    const timer = window.setInterval(() => void refresh(), 15_000);
+    return () => {
+      disposed = true;
+      stopEvents();
+      window.clearInterval(timer);
+    };
   }, []);
 
   const navigate = (next: ViewId) => { setView(next); setSidebarOpen(false); window.scrollTo({ top: 0, behavior: "smooth" }); };
@@ -383,11 +452,11 @@ function App() {
       <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
         <div className="brand"><div className="brand-mark">A</div><div><strong>ASTER</strong><span>RESEARCH CONSOLE</span></div></div>
         <nav>{navigation.map((item) => { const Icon = item.icon; return <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => navigate(item.id)}><Icon size={19} /><span>{item.label}</span></button>; })}</nav>
-        <div className="sidebar-foot"><div><Activity size={15} /><span>Snapshot</span><strong>CONNECTED</strong></div><small>Catalog {snapshot.meta.catalogDigest}</small></div>
+        <div className={`sidebar-foot connection-${connection}`}><div><Activity size={15} /><span>Live feed</span><strong>{connection.toUpperCase()}</strong></div><small>Catalog {snapshot.meta.catalogDigest}</small></div>
       </aside>
       {sidebarOpen && <button className="sidebar-scrim" onClick={() => setSidebarOpen(false)} aria-label="Close navigation" />}
       <main className="workspace">
-        <header className="topbar"><button className="mobile-menu" onClick={() => setSidebarOpen(true)}><Menu size={20} /></button><div className="workspace-status"><span className="live-dot" /><span>WORKSPACE</span><strong>CSI500 PIT</strong><i /> <span>AS OF</span><strong>{snapshot.meta.asOf}</strong></div><div className="mode-switch"><button className={mode === "research" ? "active" : ""} onClick={() => setMode("research")}>Research</button><button className={mode === "showcase" ? "active" : ""} onClick={() => setMode("showcase")}>Showcase</button></div></header>
+        <header className="topbar"><button className="mobile-menu" onClick={() => setSidebarOpen(true)}><Menu size={20} /></button><div className="workspace-status"><span className={`live-dot connection-${connection}`} /><span>WORKSPACE</span><strong>CSI500 PIT</strong><i /> <span>AS OF</span><strong>{snapshot.meta.asOf}</strong><i /> <span>SYNC</span><strong>{lastSync ? humanDate(lastSync.toISOString()) : "—"}</strong></div><div className="mode-switch"><button className={mode === "research" ? "active" : ""} onClick={() => setMode("research")}>Research</button><button className={mode === "showcase" ? "active" : ""} onClick={() => setMode("showcase")}>Showcase</button></div></header>
         {mode === "showcase" && <div className="showcase-disclosure"><CircleAlert size={15} />{snapshot.meta.showcaseDisclosure}</div>}
         <div className="content">
           {view === "overview" && <Overview snapshot={snapshot} navigate={navigate} openFactor={setFactor} />}

@@ -1,7 +1,7 @@
 {
   "meta": {
-    "schema": "aster-console-snapshot-v1",
-    "generatedAt": "2026-11-24T23:31:34.139245+08:00",
+    "schema": "aster-console-snapshot-v2",
+    "generatedAt": "2026-11-25T15:56:18.604547+08:00",
     "asOf": "2026-11-24",
     "catalogDigest": "4ad5d5a7f66c",
     "mode": "research",
@@ -11,29 +11,29 @@
     {
       "id": "data",
       "label": "Data spine",
-      "detail": "CSI500 PIT + OHLCV",
-      "state": "complete",
+      "detail": "2218/6365 factor inputs",
+      "state": "running",
       "view": "overview"
     },
     {
       "id": "filings",
       "label": "Filing intelligence",
-      "detail": "715/715 scored",
+      "detail": "4350/4350 scored (2020-25)",
       "state": "complete",
       "view": "filings"
     },
     {
       "id": "mining",
       "label": "AI factor mining",
-      "detail": "3 Quanta candidates",
+      "detail": "8/8 directions · 26 candidates",
       "state": "complete",
       "view": "factors"
     },
     {
       "id": "evaluation",
       "label": "Canonical evaluation",
-      "detail": "11/14 validated",
-      "state": "complete",
+      "detail": "11/37 validated",
+      "state": "attention",
       "view": "factors"
     },
     {
@@ -53,52 +53,254 @@
   ],
   "jobs": [
     {
-      "name": "2025 annual filing intelligence",
-      "completed_at": "2026-11-24T23:07:35+08:00",
-      "documents_scored": 715,
-      "documents_total": 716,
-      "factor_ids": [
-        "filing_demand_strength",
-        "filing_investment_intensity",
-        "filing_management_outlook",
-        "filing_margin_pressure",
-        "filing_uncertainty"
-      ],
-      "factor_rows": 3540,
-      "failures": 1,
-      "needs_ocr": 1,
+      "name": "2020-2025 annual filing intelligence",
       "state": "complete",
-      "updated_at": "2026-11-24T23:07:35+08:00",
+      "year_start": 2020,
+      "year_end": 2025,
+      "years": [
+        {
+          "name": "2020 annual filing intelligence",
+          "completed_at": "2026-11-25T13:48:49+08:00",
+          "documents_scored": 685,
+          "documents_total": 685,
+          "factor_ids": [
+            "filing_demand_strength",
+            "filing_investment_intensity",
+            "filing_management_outlook",
+            "filing_margin_pressure",
+            "filing_uncertainty"
+          ],
+          "factor_rows": 3399,
+          "failures": 0,
+          "needs_ocr": 0,
+          "state": "complete",
+          "updated_at": "2026-11-25T13:48:49+08:00",
+          "token_usage": {
+            "prompt_tokens": 11354730,
+            "completion_tokens": 1671901,
+            "total_tokens": 13026631
+          },
+          "score_completed": 685,
+          "score_total": 685,
+          "parse_completed": 685,
+          "parse_failures": 0,
+          "score_failures": 0,
+          "year": 2020
+        },
+        {
+          "name": "2021 annual filing intelligence",
+          "completed_at": "2026-11-25T14:00:40+08:00",
+          "documents_scored": 736,
+          "documents_total": 738,
+          "factor_ids": [
+            "filing_demand_strength",
+            "filing_investment_intensity",
+            "filing_management_outlook",
+            "filing_margin_pressure",
+            "filing_uncertainty"
+          ],
+          "factor_rows": 3645,
+          "failures": 2,
+          "needs_ocr": 2,
+          "state": "complete",
+          "updated_at": "2026-11-25T14:00:40+08:00",
+          "token_usage": {
+            "prompt_tokens": 12093349,
+            "completion_tokens": 1738932,
+            "total_tokens": 13832281
+          },
+          "score_completed": 736,
+          "score_total": 736,
+          "parse_completed": 738,
+          "parse_failures": 2,
+          "score_failures": 0,
+          "year": 2021
+        },
+        {
+          "name": "2022 annual filing intelligence",
+          "completed_at": "2026-11-25T14:00:37+08:00",
+          "documents_scored": 772,
+          "documents_total": 775,
+          "factor_ids": [
+            "filing_demand_strength",
+            "filing_investment_intensity",
+            "filing_management_outlook",
+            "filing_margin_pressure",
+            "filing_uncertainty"
+          ],
+          "factor_rows": 3825,
+          "failures": 3,
+          "needs_ocr": 1,
+          "state": "complete",
+          "updated_at": "2026-11-25T14:00:37+08:00",
+          "token_usage": {
+            "prompt_tokens": 13581690,
+            "completion_tokens": 1888244,
+            "total_tokens": 15469934
+          },
+          "score_completed": 772,
+          "score_total": 772,
+          "parse_completed": 775,
+          "parse_failures": 3,
+          "score_failures": 0,
+          "year": 2022
+        },
+        {
+          "name": "2023 annual filing intelligence",
+          "completed_at": "2026-11-25T01:54:17+08:00",
+          "documents_scored": 728,
+          "documents_total": 730,
+          "factor_ids": [
+            "filing_demand_strength",
+            "filing_investment_intensity",
+            "filing_management_outlook",
+            "filing_margin_pressure",
+            "filing_uncertainty"
+          ],
+          "factor_rows": 3604,
+          "failures": 2,
+          "needs_ocr": 2,
+          "state": "complete",
+          "updated_at": "2026-11-25T01:54:17+08:00",
+          "token_usage": {
+            "prompt_tokens": 12804340,
+            "completion_tokens": 1775623,
+            "total_tokens": 14579963
+          },
+          "score_completed": 728,
+          "score_total": 728,
+          "parse_completed": 730,
+          "parse_failures": 2,
+          "score_failures": 0,
+          "year": 2023
+        },
+        {
+          "name": "2024 annual filing intelligence",
+          "completed_at": "2026-11-25T01:52:49+08:00",
+          "documents_scored": 714,
+          "documents_total": 716,
+          "factor_ids": [
+            "filing_demand_strength",
+            "filing_investment_intensity",
+            "filing_management_outlook",
+            "filing_margin_pressure",
+            "filing_uncertainty"
+          ],
+          "factor_rows": 3547,
+          "failures": 2,
+          "needs_ocr": 0,
+          "state": "complete",
+          "updated_at": "2026-11-25T01:52:49+08:00",
+          "token_usage": {
+            "prompt_tokens": 12603263,
+            "completion_tokens": 1765196,
+            "total_tokens": 14368459
+          },
+          "score_completed": 714,
+          "score_total": 714,
+          "parse_completed": 716,
+          "parse_failures": 2,
+          "score_failures": 0,
+          "year": 2024
+        },
+        {
+          "name": "2025 annual filing intelligence",
+          "completed_at": "2026-11-24T23:07:35+08:00",
+          "documents_scored": 715,
+          "documents_total": 716,
+          "factor_ids": [
+            "filing_demand_strength",
+            "filing_investment_intensity",
+            "filing_management_outlook",
+            "filing_margin_pressure",
+            "filing_uncertainty"
+          ],
+          "factor_rows": 3540,
+          "failures": 1,
+          "needs_ocr": 1,
+          "state": "complete",
+          "updated_at": "2026-11-24T23:07:35+08:00",
+          "token_usage": {
+            "prompt_tokens": 12493450,
+            "completion_tokens": 1753506,
+            "total_tokens": 14246956
+          },
+          "score_completed": 715,
+          "score_total": 715,
+          "parse_completed": 716,
+          "parse_failures": 1,
+          "score_failures": 0,
+          "year": 2025
+        }
+      ],
+      "documents_total": 4360,
+      "parse_completed": 4360,
+      "parse_failures": 10,
+      "score_completed": 4350,
+      "score_total": 4350,
+      "score_failures": 0,
+      "factor_rows": 21560,
+      "needs_ocr": 6,
       "token_usage": {
-        "prompt_tokens": 12493450,
-        "completion_tokens": 1753506,
-        "total_tokens": 14246956
+        "prompt_tokens": 74930822,
+        "completion_tokens": 10593402,
+        "total_tokens": 85524224
       },
-      "score_completed": 715,
-      "score_total": 715,
-      "parse_completed": 716,
-      "parse_failures": 1,
-      "score_failures": 0
+      "updated_at": "2026-11-25T14:00:40+08:00"
+    },
+    {
+      "name": "QuantaAlpha price-volume mining",
+      "state": "complete",
+      "completed": 8,
+      "total": 8,
+      "factor_count": 23,
+      "factor_ids": [
+        "A01",
+        "A03",
+        "A04",
+        "A05",
+        "A08",
+        "B08",
+        "B11",
+        "B12"
+      ],
+      "updated_at": "2026-11-25T15:24:43.477183+08:00"
     },
     {
       "name": "CSI500 market",
       "completed": 986,
       "current": "SZ002419",
       "failures": 18,
+      "stage": "akshare_market",
       "state": "rate_limited",
       "total": 1273,
       "updated_at": "2026-11-24T14:41:12+08:00"
     },
     {
       "name": "factor inputs",
-      "current": "SH600058",
-      "failures": 62,
+      "completed_artifacts": 2218,
+      "current": "SZ002678",
+      "failures": 121,
+      "instrument_index": 1066,
+      "instruments": 1273,
+      "stage": "balance",
+      "stage_completed": 1007,
+      "stage_index": 2,
+      "stages": [
+        "valuation",
+        "balance",
+        "profit",
+        "cashflow",
+        "industry"
+      ],
       "state": "running",
-      "updated_at": "2026-11-24T20:45:50+08:00"
+      "total_artifacts": 6365,
+      "updated_at": "2026-11-25T15:55:58+08:00"
     },
     {
       "name": "financial statements",
       "failures": 40,
+      "stage": "financial",
       "state": "handed_off",
       "updated_at": "2026-11-24T12:49:21+08:00"
     }
@@ -751,6 +953,1018 @@
         "firstDate": "2017-01-09",
         "lastDate": "2025-12-31",
         "digest": "06ca6daaebd4"
+      }
+    },
+    {
+      "id": "74ff85201fc5cddc",
+      "name": "Volume_Shock_Reversal_20D",
+      "group": "PV-A01",
+      "family": "price_volume",
+      "origin": "quantaalpha",
+      "status": "candidate",
+      "researchEligible": false,
+      "demoEligible": false,
+      "pitCompliant": true,
+      "expression": "RANK(-1 * $return * TS_ZSCORE(LOG($volume + 1), 20))",
+      "description": "Ranks stocks by negative same-day return multiplied by the 20-day z-score of log volume. High values indicate large negative returns with unusually high volume, expected to reverse upward.",
+      "hypothesis": "Mine the PV-A01 abnormal-volume price-shock reversal hypothesis. An extreme same-day return accompanied by volume unusually high relative to that stock's own trailing 20-day history may reflect attention trading, stop-losses, or temporary liquidity demand and should partially reverse over the next 1-5 sessions. Seed: RANK(-1 * $return * TS_ZSCORE(LOG($volume + 1), 20)). Distinguish ordinary liquidity shocks from persistent fundamental distress; falsify the idea if the signal is continuation rather than reversal out of sample. Use only PIT-safe adjusted daily OHLCV fields from the CSI500 PIT universe. Never use future data, static current constituents, raw cross-stock share-volume comparisons, or market_return. Normalize volume only against the same stock's own trailing history. Produce interpretable candidates for one mechanism only. Preserve the economic mechanism, expected sign, holding horizon, falsification condition, and failure regime. Prefer simple expressions supported by the supplied function library.",
+      "mechanism": "Ranks stocks by negative same-day return multiplied by the 20-day z-score of log volume. High values indicate large negative returns with unusually high volume, expected to reverse upward.",
+      "expectedDirection": "Empirical sign remains subject to canonical evaluation.",
+      "falsificationCriteria": [
+        "Reject if the signal depends on isolated volume spikes.",
+        "Reject if the sign is unstable across evaluation periods."
+      ],
+      "mechanismSource": "quantaalpha_hypothesis",
+      "tags": [
+        "ai-mined",
+        "price-volume",
+        "pv-a01"
+      ],
+      "version": "mined-candidate-v1",
+      "statusReason": "Awaiting canonical evaluation and factor-library promotion.",
+      "metrics": {
+        "rankIc": 0.03919325,
+        "rankIcIr": 0.30838274,
+        "coverage": null,
+        "turnover": null,
+        "correlation": null,
+        "observations": null
+      },
+      "yearlyRankIc": {},
+      "artifact": {
+        "rows": 0,
+        "instruments": 0,
+        "firstDate": null,
+        "lastDate": null,
+        "digest": "d909a1ab082d"
+      }
+    },
+    {
+      "id": "7a3d577b3438d7ed",
+      "name": "Volume_Shock_Reversal_10D",
+      "group": "PV-A01",
+      "family": "price_volume",
+      "origin": "quantaalpha",
+      "status": "candidate",
+      "researchEligible": false,
+      "demoEligible": false,
+      "pitCompliant": true,
+      "expression": "RANK(-1 * $return * TS_ZSCORE(LOG($volume + 1), 10))",
+      "description": "Similar to the 20-day version but uses a 10-day window for the volume z-score, capturing shorter-term volume shocks for reversal signals.",
+      "hypothesis": "Mine the PV-A01 abnormal-volume price-shock reversal hypothesis. An extreme same-day return accompanied by volume unusually high relative to that stock's own trailing 20-day history may reflect attention trading, stop-losses, or temporary liquidity demand and should partially reverse over the next 1-5 sessions. Seed: RANK(-1 * $return * TS_ZSCORE(LOG($volume + 1), 20)). Distinguish ordinary liquidity shocks from persistent fundamental distress; falsify the idea if the signal is continuation rather than reversal out of sample. Use only PIT-safe adjusted daily OHLCV fields from the CSI500 PIT universe. Never use future data, static current constituents, raw cross-stock share-volume comparisons, or market_return. Normalize volume only against the same stock's own trailing history. Produce interpretable candidates for one mechanism only. Preserve the economic mechanism, expected sign, holding horizon, falsification condition, and failure regime. Prefer simple expressions supported by the supplied function library.",
+      "mechanism": "Similar to the 20-day version but uses a 10-day window for the volume z-score, capturing shorter-term volume shocks for reversal signals.",
+      "expectedDirection": "Empirical sign remains subject to canonical evaluation.",
+      "falsificationCriteria": [
+        "Reject if the signal depends on isolated volume spikes.",
+        "Reject if the sign is unstable across evaluation periods."
+      ],
+      "mechanismSource": "quantaalpha_hypothesis",
+      "tags": [
+        "ai-mined",
+        "price-volume",
+        "pv-a01"
+      ],
+      "version": "mined-candidate-v1",
+      "statusReason": "Awaiting canonical evaluation and factor-library promotion.",
+      "metrics": {
+        "rankIc": 0.03919325,
+        "rankIcIr": 0.30838274,
+        "coverage": null,
+        "turnover": null,
+        "correlation": null,
+        "observations": null
+      },
+      "yearlyRankIc": {},
+      "artifact": {
+        "rows": 0,
+        "instruments": 0,
+        "firstDate": null,
+        "lastDate": null,
+        "digest": "5f162a969343"
+      }
+    },
+    {
+      "id": "f8265bfd254cefa0",
+      "name": "Abnormal_Return_Volume_Shock_Reversal_20D",
+      "group": "PV-A01",
+      "family": "price_volume",
+      "origin": "quantaalpha",
+      "status": "candidate",
+      "researchEligible": false,
+      "demoEligible": false,
+      "pitCompliant": true,
+      "expression": "RANK(-1 * ($return - TS_MEAN($return, 20)) * TS_ZSCORE(LOG($volume + 1), 20))",
+      "description": "Uses the deviation of same-day return from its 20-day mean (abnormal return) multiplied by the 20-day volume z-score, then ranks. Captures reversal after abnormal price moves accompanied by high volume.",
+      "hypothesis": "Mine the PV-A01 abnormal-volume price-shock reversal hypothesis. An extreme same-day return accompanied by volume unusually high relative to that stock's own trailing 20-day history may reflect attention trading, stop-losses, or temporary liquidity demand and should partially reverse over the next 1-5 sessions. Seed: RANK(-1 * $return * TS_ZSCORE(LOG($volume + 1), 20)). Distinguish ordinary liquidity shocks from persistent fundamental distress; falsify the idea if the signal is continuation rather than reversal out of sample. Use only PIT-safe adjusted daily OHLCV fields from the CSI500 PIT universe. Never use future data, static current constituents, raw cross-stock share-volume comparisons, or market_return. Normalize volume only against the same stock's own trailing history. Produce interpretable candidates for one mechanism only. Preserve the economic mechanism, expected sign, holding horizon, falsification condition, and failure regime. Prefer simple expressions supported by the supplied function library.",
+      "mechanism": "Uses the deviation of same-day return from its 20-day mean (abnormal return) multiplied by the 20-day volume z-score, then ranks. Captures reversal after abnormal price moves accompanied by high volume.",
+      "expectedDirection": "Empirical sign remains subject to canonical evaluation.",
+      "falsificationCriteria": [
+        "Reject if the signal depends on isolated volume spikes.",
+        "Reject if the sign is unstable across evaluation periods."
+      ],
+      "mechanismSource": "quantaalpha_hypothesis",
+      "tags": [
+        "ai-mined",
+        "price-volume",
+        "pv-a01"
+      ],
+      "version": "mined-candidate-v1",
+      "statusReason": "Awaiting canonical evaluation and factor-library promotion.",
+      "metrics": {
+        "rankIc": 0.03919325,
+        "rankIcIr": 0.30838274,
+        "coverage": null,
+        "turnover": null,
+        "correlation": null,
+        "observations": null
+      },
+      "yearlyRankIc": {},
+      "artifact": {
+        "rows": 0,
+        "instruments": 0,
+        "firstDate": null,
+        "lastDate": null,
+        "digest": "4670b473b43a"
+      }
+    },
+    {
+      "id": "6583ed6e1f290b63",
+      "name": "Momentum_Volume_ZScore_20D",
+      "group": "PV-A04",
+      "family": "price_volume",
+      "origin": "quantaalpha",
+      "status": "candidate",
+      "researchEligible": false,
+      "demoEligible": false,
+      "pitCompliant": true,
+      "expression": "TS_PCTCHANGE($close,20) * TS_ZSCORE(TS_MEAN(LOG($volume+1),5),60)",
+      "description": "Base factor for the target hypothesis: 20-day price momentum confirmed by persistent elevated same-stock volume. A 5-day average of log-volume is z-scored against the stock's own trailing 60-day history, then multiplied by the 20-day close-to-close percentage change. Positive values indicate trending price with persistently expanding volume.",
+      "hypothesis": "Mine the PV-A04 smoothed-volume-confirmed medium-horizon momentum hypothesis. Persistent rather than one-day volume expansion can indicate gradual information diffusion and confirm a 10-20 day price trend. Seed: TS_PCTCHANGE($close, 20) * TS_ZSCORE(TS_MEAN(LOG($volume + 1), 5), 60). Penalize isolated volume spikes, use a 5-20 day forecast horizon, and falsify if the effect is actually short-term shock reversal. Use only PIT-safe adjusted daily OHLCV fields from the CSI500 PIT universe. Never use future data, static current constituents, raw cross-stock share-volume comparisons, or market_return. Normalize volume only against the same stock's own trailing history. Produce interpretable candidates for one mechanism only. Preserve the economic mechanism, expected sign, holding horizon, falsification condition, and failure regime. Prefer simple expressions supported by the supplied function library.",
+      "mechanism": "Base factor for the target hypothesis: 20-day price momentum confirmed by persistent elevated same-stock volume. A 5-day average of log-volume is z-scored against the stock's own trailing 60-day history, then multiplied by the 20-day close-to-close percentage change. Positive values indicate trending price with persistently expanding volume.",
+      "expectedDirection": "Empirical sign remains subject to canonical evaluation.",
+      "falsificationCriteria": [
+        "Reject if the signal depends on isolated volume spikes.",
+        "Reject if the sign is unstable across evaluation periods."
+      ],
+      "mechanismSource": "quantaalpha_hypothesis",
+      "tags": [
+        "ai-mined",
+        "price-volume",
+        "pv-a04"
+      ],
+      "version": "mined-candidate-v1",
+      "statusReason": "Awaiting canonical evaluation and factor-library promotion.",
+      "metrics": {
+        "rankIc": 0.04210757,
+        "rankIcIr": 0.31429649,
+        "coverage": null,
+        "turnover": null,
+        "correlation": null,
+        "observations": null
+      },
+      "yearlyRankIc": {},
+      "artifact": {
+        "rows": 0,
+        "instruments": 0,
+        "firstDate": null,
+        "lastDate": null,
+        "digest": "c5d05e972bce"
+      }
+    },
+    {
+      "id": "762f974b76e26532",
+      "name": "Momentum_Volume_ZScore_10D",
+      "group": "PV-A04",
+      "family": "price_volume",
+      "origin": "quantaalpha",
+      "status": "candidate",
+      "researchEligible": false,
+      "demoEligible": false,
+      "pitCompliant": true,
+      "expression": "TS_PCTCHANGE($close,10) * TS_ZSCORE(TS_MEAN(LOG($volume+1),5),40)",
+      "description": "Shorter-horizon variant of the target hypothesis. A 10-day price momentum is confirmed by a 5-day smoothed log-volume z-scored against a 40-day trailing history. Tests whether the volume-momentum confirmation persists on an intermediate horizon and avoids concentration on longer price moves.",
+      "hypothesis": "Mine the PV-A04 smoothed-volume-confirmed medium-horizon momentum hypothesis. Persistent rather than one-day volume expansion can indicate gradual information diffusion and confirm a 10-20 day price trend. Seed: TS_PCTCHANGE($close, 20) * TS_ZSCORE(TS_MEAN(LOG($volume + 1), 5), 60). Penalize isolated volume spikes, use a 5-20 day forecast horizon, and falsify if the effect is actually short-term shock reversal. Use only PIT-safe adjusted daily OHLCV fields from the CSI500 PIT universe. Never use future data, static current constituents, raw cross-stock share-volume comparisons, or market_return. Normalize volume only against the same stock's own trailing history. Produce interpretable candidates for one mechanism only. Preserve the economic mechanism, expected sign, holding horizon, falsification condition, and failure regime. Prefer simple expressions supported by the supplied function library.",
+      "mechanism": "Shorter-horizon variant of the target hypothesis. A 10-day price momentum is confirmed by a 5-day smoothed log-volume z-scored against a 40-day trailing history. Tests whether the volume-momentum confirmation persists on an intermediate horizon and avoids concentration on longer price moves.",
+      "expectedDirection": "Empirical sign remains subject to canonical evaluation.",
+      "falsificationCriteria": [
+        "Reject if the signal depends on isolated volume spikes.",
+        "Reject if the sign is unstable across evaluation periods."
+      ],
+      "mechanismSource": "quantaalpha_hypothesis",
+      "tags": [
+        "ai-mined",
+        "price-volume",
+        "pv-a04"
+      ],
+      "version": "mined-candidate-v1",
+      "statusReason": "Awaiting canonical evaluation and factor-library promotion.",
+      "metrics": {
+        "rankIc": 0.04210757,
+        "rankIcIr": 0.31429649,
+        "coverage": null,
+        "turnover": null,
+        "correlation": null,
+        "observations": null
+      },
+      "yearlyRankIc": {},
+      "artifact": {
+        "rows": 0,
+        "instruments": 0,
+        "firstDate": null,
+        "lastDate": null,
+        "digest": "a4086d0591fb"
+      }
+    },
+    {
+      "id": "1eacaf4b5179b460",
+      "name": "Momentum_Volume_Median_Confirm_20D",
+      "group": "PV-A04",
+      "family": "price_volume",
+      "origin": "quantaalpha",
+      "status": "candidate",
+      "researchEligible": false,
+      "demoEligible": false,
+      "pitCompliant": true,
+      "expression": "TS_PCTCHANGE($close,20) * TS_ZSCORE(TS_MEDIAN(LOG($volume+1),5),60)",
+      "description": "Robust variant of the target hypothesis where the 5-day log-volume baseline uses a median instead of a mean, then z-scored against the stock's own trailing 60-day history. Combined with 20-day price momentum, it tests whether the confirmation effect is sensitive to single-day volume outliers within the smoothing window.",
+      "hypothesis": "Mine the PV-A04 smoothed-volume-confirmed medium-horizon momentum hypothesis. Persistent rather than one-day volume expansion can indicate gradual information diffusion and confirm a 10-20 day price trend. Seed: TS_PCTCHANGE($close, 20) * TS_ZSCORE(TS_MEAN(LOG($volume + 1), 5), 60). Penalize isolated volume spikes, use a 5-20 day forecast horizon, and falsify if the effect is actually short-term shock reversal. Use only PIT-safe adjusted daily OHLCV fields from the CSI500 PIT universe. Never use future data, static current constituents, raw cross-stock share-volume comparisons, or market_return. Normalize volume only against the same stock's own trailing history. Produce interpretable candidates for one mechanism only. Preserve the economic mechanism, expected sign, holding horizon, falsification condition, and failure regime. Prefer simple expressions supported by the supplied function library.",
+      "mechanism": "Robust variant of the target hypothesis where the 5-day log-volume baseline uses a median instead of a mean, then z-scored against the stock's own trailing 60-day history. Combined with 20-day price momentum, it tests whether the confirmation effect is sensitive to single-day volume outliers within the smoothing window.",
+      "expectedDirection": "Empirical sign remains subject to canonical evaluation.",
+      "falsificationCriteria": [
+        "Reject if the signal depends on isolated volume spikes.",
+        "Reject if the sign is unstable across evaluation periods."
+      ],
+      "mechanismSource": "quantaalpha_hypothesis",
+      "tags": [
+        "ai-mined",
+        "price-volume",
+        "pv-a04"
+      ],
+      "version": "mined-candidate-v1",
+      "statusReason": "Awaiting canonical evaluation and factor-library promotion.",
+      "metrics": {
+        "rankIc": 0.04210757,
+        "rankIcIr": 0.31429649,
+        "coverage": null,
+        "turnover": null,
+        "correlation": null,
+        "observations": null
+      },
+      "yearlyRankIc": {},
+      "artifact": {
+        "rows": 0,
+        "instruments": 0,
+        "firstDate": null,
+        "lastDate": null,
+        "digest": "3942b7dd5932"
+      }
+    },
+    {
+      "id": "1cd93bda6fa0ddab",
+      "name": "Volume_Confirmed_Range_Expansion_Signed_20D",
+      "group": "PV-A05",
+      "family": "price_volume",
+      "origin": "quantaalpha",
+      "status": "candidate",
+      "researchEligible": false,
+      "demoEligible": false,
+      "pitCompliant": true,
+      "expression": "SIGN($return) * MAX(TS_ZSCORE(($high-$low)/(DELAY($close,1)+1e-8),20),0) * MAX(TS_ZSCORE(LOG($volume+1),20),0)",
+      "description": "Captures the core hypothesis: a directional range expansion confirmed by abnormal own-history volume. The factor multiplies the sign of the daily return by the positive parts of the 20-day time-series z-scores of normalized range and log volume. It is designed to predict continuation of the breakout direction over the next 5 trading days.",
+      "hypothesis": "Mine the PV-A05 volume breakout after volatility compression hypothesis. After low trailing return volatility and a compressed trading range, a directional range expansion accompanied by unusually high own-history volume may continue. Seed components: SIGN($return), TS_ZSCORE(($high-$low)/(DELAY($close,1)+1e-8),20), TS_ZSCORE(LOG($volume+1),20), and inverse trailing TS_STD($return,20). Require compression to be known before the breakout; falsify if high-volume expansion mostly reverses. Use only PIT-safe adjusted daily OHLCV fields from the CSI500 PIT universe. Never use future data, static current constituents, raw cross-stock share-volume comparisons, or market_return. Normalize volume only against the same stock's own trailing history. Produce interpretable candidates for one mechanism only. Preserve the economic mechanism, expected sign, holding horizon, falsification condition, and failure regime. Prefer simple expressions supported by the supplied function library.",
+      "mechanism": "Captures the core hypothesis: a directional range expansion confirmed by abnormal own-history volume. The factor multiplies the sign of the daily return by the positive parts of the 20-day time-series z-scores of normalized range and log volume. It is designed to predict continuation of the breakout direction over the next 5 trading days.",
+      "expectedDirection": "Empirical sign remains subject to canonical evaluation.",
+      "falsificationCriteria": [
+        "Reject if the signal depends on isolated volume spikes.",
+        "Reject if the sign is unstable across evaluation periods."
+      ],
+      "mechanismSource": "quantaalpha_hypothesis",
+      "tags": [
+        "ai-mined",
+        "price-volume",
+        "pv-a05"
+      ],
+      "version": "mined-candidate-v1",
+      "statusReason": "Awaiting canonical evaluation and factor-library promotion.",
+      "metrics": {
+        "rankIc": 0.03830218,
+        "rankIcIr": 0.29356138,
+        "coverage": null,
+        "turnover": null,
+        "correlation": null,
+        "observations": null
+      },
+      "yearlyRankIc": {},
+      "artifact": {
+        "rows": 0,
+        "instruments": 0,
+        "firstDate": null,
+        "lastDate": null,
+        "digest": "d4841f6f223c"
+      }
+    },
+    {
+      "id": "e9ca23b3272cec0a",
+      "name": "Compression_Weighted_Volume_Range_Expansion_120D_20D",
+      "group": "PV-A05",
+      "family": "price_volume",
+      "origin": "quantaalpha",
+      "status": "candidate",
+      "researchEligible": false,
+      "demoEligible": false,
+      "pitCompliant": true,
+      "expression": "(1 - TS_RANK(TS_STD($return,20),120)/120) * SIGN($return) * MAX(TS_ZSCORE(($high-$low)/(DELAY($close,1)+1e-8),20),0) * MAX(TS_ZSCORE(LOG($volume+1),20),0)",
+      "description": "Extends the core idea by weighting the volume-confirmed range expansion with a continuous compression score. The compression score is defined as one minus the 120-day time-series rank percentile of 20-day return volatility, so lower volatility (compression) increases the weight. This factor aims to capture the hypothesis that expansion following a coiled, low-volatility state is more predictive.",
+      "hypothesis": "Mine the PV-A05 volume breakout after volatility compression hypothesis. After low trailing return volatility and a compressed trading range, a directional range expansion accompanied by unusually high own-history volume may continue. Seed components: SIGN($return), TS_ZSCORE(($high-$low)/(DELAY($close,1)+1e-8),20), TS_ZSCORE(LOG($volume+1),20), and inverse trailing TS_STD($return,20). Require compression to be known before the breakout; falsify if high-volume expansion mostly reverses. Use only PIT-safe adjusted daily OHLCV fields from the CSI500 PIT universe. Never use future data, static current constituents, raw cross-stock share-volume comparisons, or market_return. Normalize volume only against the same stock's own trailing history. Produce interpretable candidates for one mechanism only. Preserve the economic mechanism, expected sign, holding horizon, falsification condition, and failure regime. Prefer simple expressions supported by the supplied function library.",
+      "mechanism": "Extends the core idea by weighting the volume-confirmed range expansion with a continuous compression score. The compression score is defined as one minus the 120-day time-series rank percentile of 20-day return volatility, so lower volatility (compression) increases the weight. This factor aims to capture the hypothesis that expansion following a coiled, low-volatility state is more predictive.",
+      "expectedDirection": "Empirical sign remains subject to canonical evaluation.",
+      "falsificationCriteria": [
+        "Reject if the signal depends on isolated volume spikes.",
+        "Reject if the sign is unstable across evaluation periods."
+      ],
+      "mechanismSource": "quantaalpha_hypothesis",
+      "tags": [
+        "ai-mined",
+        "price-volume",
+        "pv-a05"
+      ],
+      "version": "mined-candidate-v1",
+      "statusReason": "Awaiting canonical evaluation and factor-library promotion.",
+      "metrics": {
+        "rankIc": 0.03830218,
+        "rankIcIr": 0.29356138,
+        "coverage": null,
+        "turnover": null,
+        "correlation": null,
+        "observations": null
+      },
+      "yearlyRankIc": {},
+      "artifact": {
+        "rows": 0,
+        "instruments": 0,
+        "firstDate": null,
+        "lastDate": null,
+        "digest": "36452a46f496"
+      }
+    },
+    {
+      "id": "88ad247723cd7d9d",
+      "name": "Signed_Range_Volume_Correlation_20D",
+      "group": "PV-A05",
+      "family": "price_volume",
+      "origin": "quantaalpha",
+      "status": "candidate",
+      "researchEligible": false,
+      "demoEligible": false,
+      "pitCompliant": true,
+      "expression": "SIGN($return) * TS_CORR(($high-$low)/(DELAY($close,1)+1e-8), LOG($volume+1), 20)",
+      "description": "A simpler alternative that captures the co-movement of range expansion and volume, signed by the daily return. It computes the 20-day correlation between normalized range and log volume, and multiplies by the sign of the return. This factor tests whether the alignment of range and volume is a directional signal for continuation, without explicit compression conditioning.",
+      "hypothesis": "Mine the PV-A05 volume breakout after volatility compression hypothesis. After low trailing return volatility and a compressed trading range, a directional range expansion accompanied by unusually high own-history volume may continue. Seed components: SIGN($return), TS_ZSCORE(($high-$low)/(DELAY($close,1)+1e-8),20), TS_ZSCORE(LOG($volume+1),20), and inverse trailing TS_STD($return,20). Require compression to be known before the breakout; falsify if high-volume expansion mostly reverses. Use only PIT-safe adjusted daily OHLCV fields from the CSI500 PIT universe. Never use future data, static current constituents, raw cross-stock share-volume comparisons, or market_return. Normalize volume only against the same stock's own trailing history. Produce interpretable candidates for one mechanism only. Preserve the economic mechanism, expected sign, holding horizon, falsification condition, and failure regime. Prefer simple expressions supported by the supplied function library.",
+      "mechanism": "A simpler alternative that captures the co-movement of range expansion and volume, signed by the daily return. It computes the 20-day correlation between normalized range and log volume, and multiplies by the sign of the return. This factor tests whether the alignment of range and volume is a directional signal for continuation, without explicit compression conditioning.",
+      "expectedDirection": "Empirical sign remains subject to canonical evaluation.",
+      "falsificationCriteria": [
+        "Reject if the signal depends on isolated volume spikes.",
+        "Reject if the sign is unstable across evaluation periods."
+      ],
+      "mechanismSource": "quantaalpha_hypothesis",
+      "tags": [
+        "ai-mined",
+        "price-volume",
+        "pv-a05"
+      ],
+      "version": "mined-candidate-v1",
+      "statusReason": "Awaiting canonical evaluation and factor-library promotion.",
+      "metrics": {
+        "rankIc": 0.03830218,
+        "rankIcIr": 0.29356138,
+        "coverage": null,
+        "turnover": null,
+        "correlation": null,
+        "observations": null
+      },
+      "yearlyRankIc": {},
+      "artifact": {
+        "rows": 0,
+        "instruments": 0,
+        "firstDate": null,
+        "lastDate": null,
+        "digest": "9c96b410e560"
+      }
+    },
+    {
+      "id": "45bce3f4e2bf8e49",
+      "name": "CLV_Smoothed_5D",
+      "group": "PV-A08",
+      "family": "price_volume",
+      "origin": "quantaalpha",
+      "status": "candidate",
+      "researchEligible": false,
+      "demoEligible": false,
+      "pitCompliant": true,
+      "expression": "RANK(TS_MEAN((2*$close-$high-$low)/($high-$low+1e-8), 5))",
+      "description": "This factor computes the Close Location Value (CLV), which measures where the close sits within the day's high-low range as a proxy for same-day order-flow imbalance, then smooths it over a 5-day window to reduce noise and applies a cross-sectional rank. Persistence of a positive close location is hypothesized to predict short-horizon continuation, while a persistently negative one predicts weakness.",
+      "hypothesis": "Mine the PV-A08 close-location and volume-pressure hypothesis. CLV=(2*$close-$high-$low)/($high-$low+1e-8) measures whether buyers or sellers control the close; interact it with the stock's own relative volume. Moderate abnormal volume may confirm 1-5 day continuation, while extreme volume may become overtrading and reversal. Keep any nonlinear threshold simple and falsify if close location adds no information beyond same-day return. Use only PIT-safe adjusted daily OHLCV fields from the CSI500 PIT universe. Never use future data, static current constituents, raw cross-stock share-volume comparisons, or market_return. Normalize volume only against the same stock's own trailing history. Produce interpretable candidates for one mechanism only. Preserve the economic mechanism, expected sign, holding horizon, falsification condition, and failure regime. Prefer simple expressions supported by the supplied function library.",
+      "mechanism": "This factor computes the Close Location Value (CLV), which measures where the close sits within the day's high-low range as a proxy for same-day order-flow imbalance, then smooths it over a 5-day window to reduce noise and applies a cross-sectional rank. Persistence of a positive close location is hypothesized to predict short-horizon continuation, while a persistently negative one predicts weakness.",
+      "expectedDirection": "Empirical sign remains subject to canonical evaluation.",
+      "falsificationCriteria": [
+        "Reject if the signal depends on isolated volume spikes.",
+        "Reject if the sign is unstable across evaluation periods."
+      ],
+      "mechanismSource": "quantaalpha_hypothesis",
+      "tags": [
+        "ai-mined",
+        "price-volume",
+        "pv-a08"
+      ],
+      "version": "mined-candidate-v1",
+      "statusReason": "Awaiting canonical evaluation and factor-library promotion.",
+      "metrics": {
+        "rankIc": 0.04137177,
+        "rankIcIr": 0.32887187,
+        "coverage": null,
+        "turnover": null,
+        "correlation": null,
+        "observations": null
+      },
+      "yearlyRankIc": {},
+      "artifact": {
+        "rows": 0,
+        "instruments": 0,
+        "firstDate": null,
+        "lastDate": null,
+        "digest": "c71f98108f4b"
+      }
+    },
+    {
+      "id": "7e6bf6fe339fd671",
+      "name": "CLV_Volume_Hump_20D",
+      "group": "PV-A08",
+      "family": "price_volume",
+      "origin": "quantaalpha",
+      "status": "candidate",
+      "researchEligible": false,
+      "demoEligible": false,
+      "pitCompliant": true,
+      "expression": "RANK(((2*$close-$high-$low)/($high-$low+1e-8)) * MAX(1 - 2*ABS(TS_RANK($volume,20) - 0.6), 0))",
+      "description": "This factor modulates the close location value by a hump-shaped function of the stock's own-history volume rank over 20 days. Moderate abnormal participation (volume rank near 0.6) is treated as confirmation of the order-flow imbalance, while extreme or very low participation attenuates the signal, capturing the hypothesis that extreme volume signals crowding and reversal.",
+      "hypothesis": "Mine the PV-A08 close-location and volume-pressure hypothesis. CLV=(2*$close-$high-$low)/($high-$low+1e-8) measures whether buyers or sellers control the close; interact it with the stock's own relative volume. Moderate abnormal volume may confirm 1-5 day continuation, while extreme volume may become overtrading and reversal. Keep any nonlinear threshold simple and falsify if close location adds no information beyond same-day return. Use only PIT-safe adjusted daily OHLCV fields from the CSI500 PIT universe. Never use future data, static current constituents, raw cross-stock share-volume comparisons, or market_return. Normalize volume only against the same stock's own trailing history. Produce interpretable candidates for one mechanism only. Preserve the economic mechanism, expected sign, holding horizon, falsification condition, and failure regime. Prefer simple expressions supported by the supplied function library.",
+      "mechanism": "This factor modulates the close location value by a hump-shaped function of the stock's own-history volume rank over 20 days. Moderate abnormal participation (volume rank near 0.6) is treated as confirmation of the order-flow imbalance, while extreme or very low participation attenuates the signal, capturing the hypothesis that extreme volume signals crowding and reversal.",
+      "expectedDirection": "Empirical sign remains subject to canonical evaluation.",
+      "falsificationCriteria": [
+        "Reject if the signal depends on isolated volume spikes.",
+        "Reject if the sign is unstable across evaluation periods."
+      ],
+      "mechanismSource": "quantaalpha_hypothesis",
+      "tags": [
+        "ai-mined",
+        "price-volume",
+        "pv-a08"
+      ],
+      "version": "mined-candidate-v1",
+      "statusReason": "Awaiting canonical evaluation and factor-library promotion.",
+      "metrics": {
+        "rankIc": 0.04137177,
+        "rankIcIr": 0.32887187,
+        "coverage": null,
+        "turnover": null,
+        "correlation": null,
+        "observations": null
+      },
+      "yearlyRankIc": {},
+      "artifact": {
+        "rows": 0,
+        "instruments": 0,
+        "firstDate": null,
+        "lastDate": null,
+        "digest": "16c135e80ef9"
+      }
+    },
+    {
+      "id": "b8eeefdaf8f67e2f",
+      "name": "CLV_Residual_vs_Return",
+      "group": "PV-A08",
+      "family": "price_volume",
+      "origin": "quantaalpha",
+      "status": "candidate",
+      "researchEligible": false,
+      "demoEligible": false,
+      "pitCompliant": true,
+      "expression": "RANK((2*$close-$high-$low)/($high-$low+1e-8) - $return)",
+      "description": "This factor isolates the part of the close-location signal that is not already explained by the same-day return, addressing the falsification benchmark that CLV must add information beyond $return. A high value indicates the close finished strongly relative to the total move, reflecting intraday imbalance and potential continuation over the next 1-5 trading days.",
+      "hypothesis": "Mine the PV-A08 close-location and volume-pressure hypothesis. CLV=(2*$close-$high-$low)/($high-$low+1e-8) measures whether buyers or sellers control the close; interact it with the stock's own relative volume. Moderate abnormal volume may confirm 1-5 day continuation, while extreme volume may become overtrading and reversal. Keep any nonlinear threshold simple and falsify if close location adds no information beyond same-day return. Use only PIT-safe adjusted daily OHLCV fields from the CSI500 PIT universe. Never use future data, static current constituents, raw cross-stock share-volume comparisons, or market_return. Normalize volume only against the same stock's own trailing history. Produce interpretable candidates for one mechanism only. Preserve the economic mechanism, expected sign, holding horizon, falsification condition, and failure regime. Prefer simple expressions supported by the supplied function library.",
+      "mechanism": "This factor isolates the part of the close-location signal that is not already explained by the same-day return, addressing the falsification benchmark that CLV must add information beyond $return. A high value indicates the close finished strongly relative to the total move, reflecting intraday imbalance and potential continuation over the next 1-5 trading days.",
+      "expectedDirection": "Empirical sign remains subject to canonical evaluation.",
+      "falsificationCriteria": [
+        "Reject if the signal depends on isolated volume spikes.",
+        "Reject if the sign is unstable across evaluation periods."
+      ],
+      "mechanismSource": "quantaalpha_hypothesis",
+      "tags": [
+        "ai-mined",
+        "price-volume",
+        "pv-a08"
+      ],
+      "version": "mined-candidate-v1",
+      "statusReason": "Awaiting canonical evaluation and factor-library promotion.",
+      "metrics": {
+        "rankIc": 0.04137177,
+        "rankIcIr": 0.32887187,
+        "coverage": null,
+        "turnover": null,
+        "correlation": null,
+        "observations": null
+      },
+      "yearlyRankIc": {},
+      "artifact": {
+        "rows": 0,
+        "instruments": 0,
+        "firstDate": null,
+        "lastDate": null,
+        "digest": "6628d6a8012b"
+      }
+    },
+    {
+      "id": "ca5e2faad92f5d24",
+      "name": "Signed_Path_Smoothness_40D",
+      "group": "PV-B08",
+      "family": "price_volume",
+      "origin": "quantaalpha",
+      "status": "candidate",
+      "researchEligible": false,
+      "demoEligible": false,
+      "pitCompliant": true,
+      "expression": "RANK(TS_SUM($return, 40) / (TS_SUM(ABS($return), 40) + 1e-8))",
+      "description": "Cross-sectional rank of the 40-day signed path-efficiency ratio (smoothness). It equals the net 40-day cumulative return divided by the sum of absolute daily returns, i.e. SIGN(TS_SUM($return,40)) * (ABS(TS_SUM($return,40)) / (TS_SUM(ABS($return),40)+1e-8)) in simplified form. A high value means the 40-day move was achieved by many small same-direction daily steps (gradual diffusion), which is hypothesized to persist into the next 10 trading days; a low/negative value indicates a jump-driven or choppy path. Uses only PIT-safe close-to-close returns.",
+      "hypothesis": "Mine the PV-B08 price-path smoothness hypothesis. For the same cumulative return, a path made of many small same-direction moves is more consistent with gradual information diffusion than a path dominated by a few jumps. Seed smoothness: ABS(TS_SUM($return,20))/(TS_SUM(ABS($return),20)+1e-8), signed by the cumulative return, optionally confirmed by persistent own-history volume. Test 20-60 day formation and 5-20 day holding; falsify after controlling for cumulative return and volatility. Use only PIT-safe adjusted daily OHLCV fields from the CSI500 PIT universe. Never use future data, static current constituents, raw cross-stock share-volume comparisons, or market_return. Normalize volume only against the same stock's own trailing history. Produce interpretable candidates for one mechanism only. Preserve the economic mechanism, expected sign, holding horizon, falsification condition, and failure regime. Prefer simple expressions supported by the supplied function library.",
+      "mechanism": "Cross-sectional rank of the 40-day signed path-efficiency ratio (smoothness). It equals the net 40-day cumulative return divided by the sum of absolute daily returns, i.e. SIGN(TS_SUM($return,40)) * (ABS(TS_SUM($return,40)) / (TS_SUM(ABS($return),40)+1e-8)) in simplified form. A high value means the 40-day move was achieved by many small same-direction daily steps (gradual diffusion), which is hypothesized to persist into the next 10 trading days; a low/negative value indicates a jump-driven or choppy path. Uses only PIT-safe close-to-close returns.",
+      "expectedDirection": "Empirical sign remains subject to canonical evaluation.",
+      "falsificationCriteria": [
+        "Reject if the signal depends on isolated volume spikes.",
+        "Reject if the sign is unstable across evaluation periods."
+      ],
+      "mechanismSource": "quantaalpha_hypothesis",
+      "tags": [
+        "ai-mined",
+        "price-volume",
+        "pv-b08"
+      ],
+      "version": "mined-candidate-v1",
+      "statusReason": "Awaiting canonical evaluation and factor-library promotion.",
+      "metrics": {
+        "rankIc": 0.04089838,
+        "rankIcIr": 0.30891166,
+        "coverage": null,
+        "turnover": null,
+        "correlation": null,
+        "observations": null
+      },
+      "yearlyRankIc": {},
+      "artifact": {
+        "rows": 0,
+        "instruments": 0,
+        "firstDate": null,
+        "lastDate": null,
+        "digest": "93d1b89536a9"
+      }
+    },
+    {
+      "id": "a62191efe8e68ca8",
+      "name": "Volume_Confirmed_Smoothness_40D",
+      "group": "PV-B08",
+      "family": "price_volume",
+      "origin": "quantaalpha",
+      "status": "candidate",
+      "researchEligible": false,
+      "demoEligible": false,
+      "pitCompliant": true,
+      "expression": "RANK(TS_SUM($return, 40) / (TS_SUM(ABS($return), 40) + 1e-8) * (1 + 0.5 * MAX(MIN(TS_ZSCORE(LOG($volume), 60), 2), -2)))",
+      "description": "The 40-day signed path-efficiency ratio scaled by a same-stock own-history volume confirmation weight. The weight is 1 + 0.5 * the stock's own 60-day time-series z-score of log volume, clipped to [-2, 2], so that gradual-diffusion paths accompanied by above-normal own-history trading activity (attention/participation confirmation, as in the 20-day log-volume z-score vs. its own trailing 60-day history) receive a larger positive loading, while low-volume paths are damped. No cross-sectional share-volume comparison is used, only the stock's own trailing history.",
+      "hypothesis": "Mine the PV-B08 price-path smoothness hypothesis. For the same cumulative return, a path made of many small same-direction moves is more consistent with gradual information diffusion than a path dominated by a few jumps. Seed smoothness: ABS(TS_SUM($return,20))/(TS_SUM(ABS($return),20)+1e-8), signed by the cumulative return, optionally confirmed by persistent own-history volume. Test 20-60 day formation and 5-20 day holding; falsify after controlling for cumulative return and volatility. Use only PIT-safe adjusted daily OHLCV fields from the CSI500 PIT universe. Never use future data, static current constituents, raw cross-stock share-volume comparisons, or market_return. Normalize volume only against the same stock's own trailing history. Produce interpretable candidates for one mechanism only. Preserve the economic mechanism, expected sign, holding horizon, falsification condition, and failure regime. Prefer simple expressions supported by the supplied function library.",
+      "mechanism": "The 40-day signed path-efficiency ratio scaled by a same-stock own-history volume confirmation weight. The weight is 1 + 0.5 * the stock's own 60-day time-series z-score of log volume, clipped to [-2, 2], so that gradual-diffusion paths accompanied by above-normal own-history trading activity (attention/participation confirmation, as in the 20-day log-volume z-score vs. its own trailing 60-day history) receive a larger positive loading, while low-volume paths are damped. No cross-sectional share-volume comparison is used, only the stock's own trailing history.",
+      "expectedDirection": "Empirical sign remains subject to canonical evaluation.",
+      "falsificationCriteria": [
+        "Reject if the signal depends on isolated volume spikes.",
+        "Reject if the sign is unstable across evaluation periods."
+      ],
+      "mechanismSource": "quantaalpha_hypothesis",
+      "tags": [
+        "ai-mined",
+        "price-volume",
+        "pv-b08"
+      ],
+      "version": "mined-candidate-v1",
+      "statusReason": "Awaiting canonical evaluation and factor-library promotion.",
+      "metrics": {
+        "rankIc": 0.04089838,
+        "rankIcIr": 0.30891166,
+        "coverage": null,
+        "turnover": null,
+        "correlation": null,
+        "observations": null
+      },
+      "yearlyRankIc": {},
+      "artifact": {
+        "rows": 0,
+        "instruments": 0,
+        "firstDate": null,
+        "lastDate": null,
+        "digest": "eefee49af5a9"
+      }
+    },
+    {
+      "id": "861c7bdc7b5af5bd",
+      "name": "Range_Path_Smoothness_40D",
+      "group": "PV-B08",
+      "family": "price_volume",
+      "origin": "quantaalpha",
+      "status": "candidate",
+      "researchEligible": false,
+      "demoEligible": false,
+      "pitCompliant": true,
+      "expression": "RANK(TS_SUM($return, 40) / (TS_SUM(($high - $low) / ($close + 1e-8), 40) + 1e-8))",
+      "description": "An alternative 40-day smoothness measure that replaces the absolute-return path length with the accumulated intraday trading range normalized by close price. The net 40-day return divided by the total 40-day realized range path captures how much of the traversed price path was translated into net directional progress: a high ratio indicates a steady, low-friction trend (smooth diffusion), while a low ratio indicates volatile back-and-forth or jump-dominated movement. Structurally different from the absolute-return version, so it diversifies the smoothness signal and uses only $high, $low, $close and $return.",
+      "hypothesis": "Mine the PV-B08 price-path smoothness hypothesis. For the same cumulative return, a path made of many small same-direction moves is more consistent with gradual information diffusion than a path dominated by a few jumps. Seed smoothness: ABS(TS_SUM($return,20))/(TS_SUM(ABS($return),20)+1e-8), signed by the cumulative return, optionally confirmed by persistent own-history volume. Test 20-60 day formation and 5-20 day holding; falsify after controlling for cumulative return and volatility. Use only PIT-safe adjusted daily OHLCV fields from the CSI500 PIT universe. Never use future data, static current constituents, raw cross-stock share-volume comparisons, or market_return. Normalize volume only against the same stock's own trailing history. Produce interpretable candidates for one mechanism only. Preserve the economic mechanism, expected sign, holding horizon, falsification condition, and failure regime. Prefer simple expressions supported by the supplied function library.",
+      "mechanism": "An alternative 40-day smoothness measure that replaces the absolute-return path length with the accumulated intraday trading range normalized by close price. The net 40-day return divided by the total 40-day realized range path captures how much of the traversed price path was translated into net directional progress: a high ratio indicates a steady, low-friction trend (smooth diffusion), while a low ratio indicates volatile back-and-forth or jump-dominated movement. Structurally different from the absolute-return version, so it diversifies the smoothness signal and uses only $high, $low, $close and $return.",
+      "expectedDirection": "Empirical sign remains subject to canonical evaluation.",
+      "falsificationCriteria": [
+        "Reject if the signal depends on isolated volume spikes.",
+        "Reject if the sign is unstable across evaluation periods."
+      ],
+      "mechanismSource": "quantaalpha_hypothesis",
+      "tags": [
+        "ai-mined",
+        "price-volume",
+        "pv-b08"
+      ],
+      "version": "mined-candidate-v1",
+      "statusReason": "Awaiting canonical evaluation and factor-library promotion.",
+      "metrics": {
+        "rankIc": 0.04089838,
+        "rankIcIr": 0.30891166,
+        "coverage": null,
+        "turnover": null,
+        "correlation": null,
+        "observations": null
+      },
+      "yearlyRankIc": {},
+      "artifact": {
+        "rows": 0,
+        "instruments": 0,
+        "firstDate": null,
+        "lastDate": null,
+        "digest": "4ec2e4d3f25b"
+      }
+    },
+    {
+      "id": "bd7d751b337a4619",
+      "name": "UpperWick_VolSurge_Rejection_20D_1p2",
+      "group": "PV-B11",
+      "family": "price_volume",
+      "origin": "quantaalpha",
+      "status": "candidate",
+      "researchEligible": false,
+      "demoEligible": false,
+      "pitCompliant": true,
+      "expression": "RANK(($high - MAX($open, $close)) / ($high - $low + 1e-8) * MAX(0, $volume / (TS_MEDIAN($volume, 20) + 1e-8) - 1.2))",
+      "description": "Captures supply-side rejection on unusually heavy same-stock volume. The upper-wick ratio measures how much of the daily range was given back above the candle body; the volume surge term activates only when today's volume exceeds 1.2x the instrument's trailing 20-day median volume, so the rejection signal is amplified when it is backed by unusual own-history participation. Higher values indicate stronger high-volume upper-wick rejection, expected to foreshadow weak forward 1-5 day returns.",
+      "hypothesis": "Mine the PV-B11 high-volume upper-wick rejection hypothesis. A long upper wick, defined as ($high-MAX($open,$close))/($high-$low+1e-8), with volume unusually high relative to the stock's own history can indicate selling pressure or a failed breakout and predict weak 1-5 day returns. Keep the expected factor sign explicit and falsify if the pattern is merely volatility exposure or if it continues upward out of sample. Use only PIT-safe adjusted daily OHLCV fields from the CSI500 PIT universe. Never use future data, static current constituents, raw cross-stock share-volume comparisons, or market_return. Normalize volume only against the same stock's own trailing history. Produce interpretable candidates for one mechanism only. Preserve the economic mechanism, expected sign, holding horizon, falsification condition, and failure regime. Prefer simple expressions supported by the supplied function library.",
+      "mechanism": "Captures supply-side rejection on unusually heavy same-stock volume. The upper-wick ratio measures how much of the daily range was given back above the candle body; the volume surge term activates only when today's volume exceeds 1.2x the instrument's trailing 20-day median volume, so the rejection signal is amplified when it is backed by unusual own-history participation. Higher values indicate stronger high-volume upper-wick rejection, expected to foreshadow weak forward 1-5 day returns.",
+      "expectedDirection": "Empirical sign remains subject to canonical evaluation.",
+      "falsificationCriteria": [
+        "Reject if the signal depends on isolated volume spikes.",
+        "Reject if the sign is unstable across evaluation periods."
+      ],
+      "mechanismSource": "quantaalpha_hypothesis",
+      "tags": [
+        "ai-mined",
+        "price-volume",
+        "pv-b11"
+      ],
+      "version": "mined-candidate-v1",
+      "statusReason": "Awaiting canonical evaluation and factor-library promotion.",
+      "metrics": {
+        "rankIc": 0.03984805,
+        "rankIcIr": 0.29796363,
+        "coverage": null,
+        "turnover": null,
+        "correlation": null,
+        "observations": null
+      },
+      "yearlyRankIc": {},
+      "artifact": {
+        "rows": 0,
+        "instruments": 0,
+        "firstDate": null,
+        "lastDate": null,
+        "digest": "c584f4edb186"
+      }
+    },
+    {
+      "id": "2be7fc533e36176c",
+      "name": "UpperWick_VolZScore_Rejection_20D",
+      "group": "PV-B11",
+      "family": "price_volume",
+      "origin": "quantaalpha",
+      "status": "candidate",
+      "researchEligible": false,
+      "demoEligible": false,
+      "pitCompliant": true,
+      "expression": "RANK(($high - MAX($open, $close)) / ($high - $low + 1e-8) * MAX(0, TS_ZSCORE($volume, 20)))",
+      "description": "Measures the upper-wick rejection weighted by the standardized deviation of today's volume from its own trailing 20-day distribution. Instead of a ratio to median volume, this uses a time-series z-score of volume, so the surge term only activates when volume is above its historical mean. This isolates genuine volume-backed candle rejections, expected to negatively predict forward 1-5 day returns.",
+      "hypothesis": "Mine the PV-B11 high-volume upper-wick rejection hypothesis. A long upper wick, defined as ($high-MAX($open,$close))/($high-$low+1e-8), with volume unusually high relative to the stock's own history can indicate selling pressure or a failed breakout and predict weak 1-5 day returns. Keep the expected factor sign explicit and falsify if the pattern is merely volatility exposure or if it continues upward out of sample. Use only PIT-safe adjusted daily OHLCV fields from the CSI500 PIT universe. Never use future data, static current constituents, raw cross-stock share-volume comparisons, or market_return. Normalize volume only against the same stock's own trailing history. Produce interpretable candidates for one mechanism only. Preserve the economic mechanism, expected sign, holding horizon, falsification condition, and failure regime. Prefer simple expressions supported by the supplied function library.",
+      "mechanism": "Measures the upper-wick rejection weighted by the standardized deviation of today's volume from its own trailing 20-day distribution. Instead of a ratio to median volume, this uses a time-series z-score of volume, so the surge term only activates when volume is above its historical mean. This isolates genuine volume-backed candle rejections, expected to negatively predict forward 1-5 day returns.",
+      "expectedDirection": "Empirical sign remains subject to canonical evaluation.",
+      "falsificationCriteria": [
+        "Reject if the signal depends on isolated volume spikes.",
+        "Reject if the sign is unstable across evaluation periods."
+      ],
+      "mechanismSource": "quantaalpha_hypothesis",
+      "tags": [
+        "ai-mined",
+        "price-volume",
+        "pv-b11"
+      ],
+      "version": "mined-candidate-v1",
+      "statusReason": "Awaiting canonical evaluation and factor-library promotion.",
+      "metrics": {
+        "rankIc": 0.03984805,
+        "rankIcIr": 0.29796363,
+        "coverage": null,
+        "turnover": null,
+        "correlation": null,
+        "observations": null
+      },
+      "yearlyRankIc": {},
+      "artifact": {
+        "rows": 0,
+        "instruments": 0,
+        "firstDate": null,
+        "lastDate": null,
+        "digest": "b91e31e2ae3a"
+      }
+    },
+    {
+      "id": "b658d82528ff5885",
+      "name": "UpperWick_VolTSRank_Rejection_20D",
+      "group": "PV-B11",
+      "family": "price_volume",
+      "origin": "quantaalpha",
+      "status": "candidate",
+      "researchEligible": false,
+      "demoEligible": false,
+      "pitCompliant": true,
+      "expression": "RANK(($high - MAX($open, $close)) / ($high - $low + 1e-8) * MAX(0, TS_RANK($volume, 20) - 0.7))",
+      "description": "Combines the upper-wick rejection ratio with the time-series rank of today's volume within its own trailing 20-day window. The volume term activates only when today's volume sits in the top 30% of its recent history (rank above 0.7), providing a scale-free way to identify 'unusually high' same-stock volume that backs the rejection. Expected to be negatively related to forward 1-5 day returns.",
+      "hypothesis": "Mine the PV-B11 high-volume upper-wick rejection hypothesis. A long upper wick, defined as ($high-MAX($open,$close))/($high-$low+1e-8), with volume unusually high relative to the stock's own history can indicate selling pressure or a failed breakout and predict weak 1-5 day returns. Keep the expected factor sign explicit and falsify if the pattern is merely volatility exposure or if it continues upward out of sample. Use only PIT-safe adjusted daily OHLCV fields from the CSI500 PIT universe. Never use future data, static current constituents, raw cross-stock share-volume comparisons, or market_return. Normalize volume only against the same stock's own trailing history. Produce interpretable candidates for one mechanism only. Preserve the economic mechanism, expected sign, holding horizon, falsification condition, and failure regime. Prefer simple expressions supported by the supplied function library.",
+      "mechanism": "Combines the upper-wick rejection ratio with the time-series rank of today's volume within its own trailing 20-day window. The volume term activates only when today's volume sits in the top 30% of its recent history (rank above 0.7), providing a scale-free way to identify 'unusually high' same-stock volume that backs the rejection. Expected to be negatively related to forward 1-5 day returns.",
+      "expectedDirection": "Empirical sign remains subject to canonical evaluation.",
+      "falsificationCriteria": [
+        "Reject if the signal depends on isolated volume spikes.",
+        "Reject if the sign is unstable across evaluation periods."
+      ],
+      "mechanismSource": "quantaalpha_hypothesis",
+      "tags": [
+        "ai-mined",
+        "price-volume",
+        "pv-b11"
+      ],
+      "version": "mined-candidate-v1",
+      "statusReason": "Awaiting canonical evaluation and factor-library promotion.",
+      "metrics": {
+        "rankIc": 0.03984805,
+        "rankIcIr": 0.29796363,
+        "coverage": null,
+        "turnover": null,
+        "correlation": null,
+        "observations": null
+      },
+      "yearlyRankIc": {},
+      "artifact": {
+        "rows": 0,
+        "instruments": 0,
+        "firstDate": null,
+        "lastDate": null,
+        "digest": "2d3a756a5ea9"
+      }
+    },
+    {
+      "id": "9a597dd45168467c",
+      "name": "PV_B12_HVOL_LWICK_SUPPORT_20D",
+      "group": "PV-B12",
+      "family": "price_volume",
+      "origin": "quantaalpha",
+      "status": "candidate",
+      "researchEligible": false,
+      "demoEligible": false,
+      "pitCompliant": true,
+      "expression": "((MIN($open,$close)-$low)/($high-$low+1e-8))*MAX(0,($volume-TS_MEAN($volume,20))/(TS_STD($volume,20)+1e-8)-1)*MAX(0,($close-$low)/($high-$low+1e-8)-0.5)",
+      "description": "PIT-safe lower-wick support score that requires an unusually high same-stock trailing 20-day volume surprise and a close in the upper half of the daily range. Lower wick captures absorption of selling at the low, the volume-surprise gate (above one standard deviation) confirms demand on abnormally high participation, and the closing-location gate (above 0.5) confirms buyers regained control. Non-qualifying days decay to zero through the MAX(0, ...) gates. Expected positive relation with next 1-5 day repair.",
+      "hypothesis": "Mine the PV-B12 high-volume lower-wick support hypothesis. A long lower wick, defined as (MIN($open,$close)-$low)/($high-$low+1e-8), with volume unusually high relative to the stock's own history can indicate demand absorption and predict a 1-5 day repair. Require the close to move meaningfully away from the low. Falsify if the apparent support is only a pause inside persistent distress or if the result is just inverse volatility exposure. Use only PIT-safe adjusted daily OHLCV fields from the CSI500 PIT universe. Never use future data, static current constituents, raw cross-stock share-volume comparisons, or market_return. Normalize volume only against the same stock's own trailing history. Produce interpretable candidates for one mechanism only. Preserve the economic mechanism, expected sign, holding horizon, falsification condition, and failure regime. Prefer simple expressions supported by the supplied function library.",
+      "mechanism": "PIT-safe lower-wick support score that requires an unusually high same-stock trailing 20-day volume surprise and a close in the upper half of the daily range. Lower wick captures absorption of selling at the low, the volume-surprise gate (above one standard deviation) confirms demand on abnormally high participation, and the closing-location gate (above 0.5) confirms buyers regained control. Non-qualifying days decay to zero through the MAX(0, ...) gates. Expected positive relation with next 1-5 day repair.",
+      "expectedDirection": "Empirical sign remains subject to canonical evaluation.",
+      "falsificationCriteria": [
+        "Reject if the signal depends on isolated volume spikes.",
+        "Reject if the sign is unstable across evaluation periods."
+      ],
+      "mechanismSource": "quantaalpha_hypothesis",
+      "tags": [
+        "ai-mined",
+        "price-volume",
+        "pv-b12"
+      ],
+      "version": "mined-candidate-v1",
+      "statusReason": "Awaiting canonical evaluation and factor-library promotion.",
+      "metrics": {
+        "rankIc": 0.03589677,
+        "rankIcIr": 0.25790209,
+        "coverage": null,
+        "turnover": null,
+        "correlation": null,
+        "observations": null
+      },
+      "yearlyRankIc": {},
+      "artifact": {
+        "rows": 0,
+        "instruments": 0,
+        "firstDate": null,
+        "lastDate": null,
+        "digest": "01b945c0aff0"
+      }
+    },
+    {
+      "id": "ba023492fd6a0191",
+      "name": "PV_B12_HVOL_LWICK_RANK_20D",
+      "group": "PV-B12",
+      "family": "price_volume",
+      "origin": "quantaalpha",
+      "status": "candidate",
+      "researchEligible": false,
+      "demoEligible": false,
+      "pitCompliant": true,
+      "expression": "RANK((MIN($open,$close)-$low)/($high-$low+1e-8))*RANK(($volume-TS_MEAN($volume,20))/(TS_STD($volume,20)+1e-8))*RANK(($close-$low)/($high-$low+1e-8))",
+      "description": "Cross-sectional rank version of the lower-wick volume-surprise support score. Ranks (independently) the lower-wick ratio, the same-stock 20-day volume z-score, and the close-location ratio, then multiplies the three ranks. This reduces scale sensitivity and merges the absorption, participation, and close-confirmation signals into a single comparable support score across the CSI500 PIT universe.",
+      "hypothesis": "Mine the PV-B12 high-volume lower-wick support hypothesis. A long lower wick, defined as (MIN($open,$close)-$low)/($high-$low+1e-8), with volume unusually high relative to the stock's own history can indicate demand absorption and predict a 1-5 day repair. Require the close to move meaningfully away from the low. Falsify if the apparent support is only a pause inside persistent distress or if the result is just inverse volatility exposure. Use only PIT-safe adjusted daily OHLCV fields from the CSI500 PIT universe. Never use future data, static current constituents, raw cross-stock share-volume comparisons, or market_return. Normalize volume only against the same stock's own trailing history. Produce interpretable candidates for one mechanism only. Preserve the economic mechanism, expected sign, holding horizon, falsification condition, and failure regime. Prefer simple expressions supported by the supplied function library.",
+      "mechanism": "Cross-sectional rank version of the lower-wick volume-surprise support score. Ranks (independently) the lower-wick ratio, the same-stock 20-day volume z-score, and the close-location ratio, then multiplies the three ranks. This reduces scale sensitivity and merges the absorption, participation, and close-confirmation signals into a single comparable support score across the CSI500 PIT universe.",
+      "expectedDirection": "Empirical sign remains subject to canonical evaluation.",
+      "falsificationCriteria": [
+        "Reject if the signal depends on isolated volume spikes.",
+        "Reject if the sign is unstable across evaluation periods."
+      ],
+      "mechanismSource": "quantaalpha_hypothesis",
+      "tags": [
+        "ai-mined",
+        "price-volume",
+        "pv-b12"
+      ],
+      "version": "mined-candidate-v1",
+      "statusReason": "Awaiting canonical evaluation and factor-library promotion.",
+      "metrics": {
+        "rankIc": 0.03589677,
+        "rankIcIr": 0.25790209,
+        "coverage": null,
+        "turnover": null,
+        "correlation": null,
+        "observations": null
+      },
+      "yearlyRankIc": {},
+      "artifact": {
+        "rows": 0,
+        "instruments": 0,
+        "firstDate": null,
+        "lastDate": null,
+        "digest": "b5bc701eaa97"
+      }
+    },
+    {
+      "id": "d93f096d6dc80dc5",
+      "name": "PV_B12_HVOL_LWICK_SUPPORT_10D",
+      "group": "PV-B12",
+      "family": "price_volume",
+      "origin": "quantaalpha",
+      "status": "candidate",
+      "researchEligible": false,
+      "demoEligible": false,
+      "pitCompliant": true,
+      "expression": "((MIN($open,$close)-$low)/($high-$low+1e-8))*MAX(0,TS_ZSCORE($volume,10)-1)*MAX(0,($close-$low)/($high-$low+1e-8)-0.5)",
+      "description": "Shorter-horizon variant of the lower-wick volume-surprise support score using a 10-day trailing volume z-score. Tests whether the absorption-plus-participation signal is more responsive on a shorter window than the 20-day version, while still requiring a close in the upper half of the daily range. Non-qualifying days decay toward zero via the MAX(0, ...) gates.",
+      "hypothesis": "Mine the PV-B12 high-volume lower-wick support hypothesis. A long lower wick, defined as (MIN($open,$close)-$low)/($high-$low+1e-8), with volume unusually high relative to the stock's own history can indicate demand absorption and predict a 1-5 day repair. Require the close to move meaningfully away from the low. Falsify if the apparent support is only a pause inside persistent distress or if the result is just inverse volatility exposure. Use only PIT-safe adjusted daily OHLCV fields from the CSI500 PIT universe. Never use future data, static current constituents, raw cross-stock share-volume comparisons, or market_return. Normalize volume only against the same stock's own trailing history. Produce interpretable candidates for one mechanism only. Preserve the economic mechanism, expected sign, holding horizon, falsification condition, and failure regime. Prefer simple expressions supported by the supplied function library.",
+      "mechanism": "Shorter-horizon variant of the lower-wick volume-surprise support score using a 10-day trailing volume z-score. Tests whether the absorption-plus-participation signal is more responsive on a shorter window than the 20-day version, while still requiring a close in the upper half of the daily range. Non-qualifying days decay toward zero via the MAX(0, ...) gates.",
+      "expectedDirection": "Empirical sign remains subject to canonical evaluation.",
+      "falsificationCriteria": [
+        "Reject if the signal depends on isolated volume spikes.",
+        "Reject if the sign is unstable across evaluation periods."
+      ],
+      "mechanismSource": "quantaalpha_hypothesis",
+      "tags": [
+        "ai-mined",
+        "price-volume",
+        "pv-b12"
+      ],
+      "version": "mined-candidate-v1",
+      "statusReason": "Awaiting canonical evaluation and factor-library promotion.",
+      "metrics": {
+        "rankIc": 0.03589677,
+        "rankIcIr": 0.25790209,
+        "coverage": null,
+        "turnover": null,
+        "correlation": null,
+        "observations": null
+      },
+      "yearlyRankIc": {},
+      "artifact": {
+        "rows": 0,
+        "instruments": 0,
+        "firstDate": null,
+        "lastDate": null,
+        "digest": "09997773d8b4"
+      }
+    },
+    {
+      "id": "5f23b57978ba865e",
+      "name": "PV_Divergence_MedianVol_10D",
+      "group": "PV-A03",
+      "family": "price_volume",
+      "origin": "quantaalpha",
+      "status": "candidate",
+      "researchEligible": false,
+      "demoEligible": false,
+      "pitCompliant": true,
+      "expression": "-TS_PCTCHANGE($close, 10) * TS_PCTCHANGE(TS_MEDIAN(LOG($volume + 1), 5), 10)",
+      "description": "Captures price-volume divergence using a 10-day price change and the 10-day change in 5-day median-smoothed log volume, with a negative sign so that divergence (price rise with volume contraction or price fall with volume expansion) yields high factor values. Median smoothing reduces the impact of isolated volume spikes.",
+      "hypothesis": "Mine the PV-A03 price-volume divergence hypothesis. A 5-20 day price rise with weakening smoothed volume suggests fading marginal demand, while a price decline with contracting volume may indicate exhausted selling pressure. Seed: -TS_PCTCHANGE($close, 10) * TS_PCTCHANGE(TS_MEAN(LOG($volume + 1), 5), 10). Test whether divergence predicts reversal and whether price-volume confirmation instead predicts continuation; reject the mechanism if results depend on a single volume spike. Use only PIT-safe adjusted daily OHLCV fields from the CSI500 PIT universe. Never use future data, static current constituents, raw cross-stock share-volume comparisons, or market_return. Normalize volume only against the same stock's own trailing history. Preserve the economic mechanism, expected sign, holding horizon, falsification condition, and failure regime. Prefer simple expressions supported by the supplied function library.",
+      "mechanism": "Captures price-volume divergence using a 10-day price change and the 10-day change in 5-day median-smoothed log volume, with a negative sign so that divergence (price rise with volume contraction or price fall with volume expansion) yields high factor values. Median smoothing reduces the impact of isolated volume spikes.",
+      "expectedDirection": "Empirical sign remains subject to canonical evaluation.",
+      "falsificationCriteria": [
+        "Reject if the signal depends on isolated volume spikes.",
+        "Reject if the sign is unstable across evaluation periods."
+      ],
+      "mechanismSource": "quantaalpha_hypothesis",
+      "tags": [
+        "ai-mined",
+        "price-volume",
+        "pv-a03"
+      ],
+      "version": "mined-candidate-v1",
+      "statusReason": "Awaiting canonical evaluation and factor-library promotion.",
+      "metrics": {
+        "rankIc": 0.04132896,
+        "rankIcIr": 0.31069881,
+        "coverage": null,
+        "turnover": null,
+        "correlation": null,
+        "observations": null
+      },
+      "yearlyRankIc": {},
+      "artifact": {
+        "rows": 0,
+        "instruments": 0,
+        "firstDate": null,
+        "lastDate": null,
+        "digest": "e803b9d56ed7"
+      }
+    },
+    {
+      "id": "4e9bb089fbb5415a",
+      "name": "PV_Divergence_EMASmoothed_10D",
+      "group": "PV-A03",
+      "family": "price_volume",
+      "origin": "quantaalpha",
+      "status": "candidate",
+      "researchEligible": false,
+      "demoEligible": false,
+      "pitCompliant": true,
+      "expression": "-TS_PCTCHANGE($close, 10) * TS_PCTCHANGE(EMA(LOG($volume + 1), 5), 10)",
+      "description": "Price-volume divergence factor using 10-day price change and the 10-day change in 5-day EMA-smoothed log volume, negated to align with the hypothesis that divergence predicts underperformance. EMA gives more weight to recent volume observations.",
+      "hypothesis": "Mine the PV-A03 price-volume divergence hypothesis. A 5-20 day price rise with weakening smoothed volume suggests fading marginal demand, while a price decline with contracting volume may indicate exhausted selling pressure. Seed: -TS_PCTCHANGE($close, 10) * TS_PCTCHANGE(TS_MEAN(LOG($volume + 1), 5), 10). Test whether divergence predicts reversal and whether price-volume confirmation instead predicts continuation; reject the mechanism if results depend on a single volume spike. Use only PIT-safe adjusted daily OHLCV fields from the CSI500 PIT universe. Never use future data, static current constituents, raw cross-stock share-volume comparisons, or market_return. Normalize volume only against the same stock's own trailing history. Preserve the economic mechanism, expected sign, holding horizon, falsification condition, and failure regime. Prefer simple expressions supported by the supplied function library.",
+      "mechanism": "Price-volume divergence factor using 10-day price change and the 10-day change in 5-day EMA-smoothed log volume, negated to align with the hypothesis that divergence predicts underperformance. EMA gives more weight to recent volume observations.",
+      "expectedDirection": "Empirical sign remains subject to canonical evaluation.",
+      "falsificationCriteria": [
+        "Reject if the signal depends on isolated volume spikes.",
+        "Reject if the sign is unstable across evaluation periods."
+      ],
+      "mechanismSource": "quantaalpha_hypothesis",
+      "tags": [
+        "ai-mined",
+        "price-volume",
+        "pv-a03"
+      ],
+      "version": "mined-candidate-v1",
+      "statusReason": "Awaiting canonical evaluation and factor-library promotion.",
+      "metrics": {
+        "rankIc": 0.04132896,
+        "rankIcIr": 0.31069881,
+        "coverage": null,
+        "turnover": null,
+        "correlation": null,
+        "observations": null
+      },
+      "yearlyRankIc": {},
+      "artifact": {
+        "rows": 0,
+        "instruments": 0,
+        "firstDate": null,
+        "lastDate": null,
+        "digest": "3b0db18ed55f"
       }
     }
   ],
@@ -4064,31 +5278,199 @@
     ]
   },
   "filings": {
-    "name": "2025 annual filing intelligence",
-    "completed_at": "2026-11-24T23:07:35+08:00",
-    "documents_scored": 715,
-    "documents_total": 716,
-    "factor_ids": [
-      "filing_demand_strength",
-      "filing_investment_intensity",
-      "filing_management_outlook",
-      "filing_margin_pressure",
-      "filing_uncertainty"
-    ],
-    "factor_rows": 3540,
-    "failures": 1,
-    "needs_ocr": 1,
+    "name": "2020-2025 annual filing intelligence",
     "state": "complete",
-    "updated_at": "2026-11-24T23:07:35+08:00",
+    "year_start": 2020,
+    "year_end": 2025,
+    "years": [
+      {
+        "name": "2020 annual filing intelligence",
+        "completed_at": "2026-11-25T13:48:49+08:00",
+        "documents_scored": 685,
+        "documents_total": 685,
+        "factor_ids": [
+          "filing_demand_strength",
+          "filing_investment_intensity",
+          "filing_management_outlook",
+          "filing_margin_pressure",
+          "filing_uncertainty"
+        ],
+        "factor_rows": 3399,
+        "failures": 0,
+        "needs_ocr": 0,
+        "state": "complete",
+        "updated_at": "2026-11-25T13:48:49+08:00",
+        "token_usage": {
+          "prompt_tokens": 11354730,
+          "completion_tokens": 1671901,
+          "total_tokens": 13026631
+        },
+        "score_completed": 685,
+        "score_total": 685,
+        "parse_completed": 685,
+        "parse_failures": 0,
+        "score_failures": 0,
+        "year": 2020
+      },
+      {
+        "name": "2021 annual filing intelligence",
+        "completed_at": "2026-11-25T14:00:40+08:00",
+        "documents_scored": 736,
+        "documents_total": 738,
+        "factor_ids": [
+          "filing_demand_strength",
+          "filing_investment_intensity",
+          "filing_management_outlook",
+          "filing_margin_pressure",
+          "filing_uncertainty"
+        ],
+        "factor_rows": 3645,
+        "failures": 2,
+        "needs_ocr": 2,
+        "state": "complete",
+        "updated_at": "2026-11-25T14:00:40+08:00",
+        "token_usage": {
+          "prompt_tokens": 12093349,
+          "completion_tokens": 1738932,
+          "total_tokens": 13832281
+        },
+        "score_completed": 736,
+        "score_total": 736,
+        "parse_completed": 738,
+        "parse_failures": 2,
+        "score_failures": 0,
+        "year": 2021
+      },
+      {
+        "name": "2022 annual filing intelligence",
+        "completed_at": "2026-11-25T14:00:37+08:00",
+        "documents_scored": 772,
+        "documents_total": 775,
+        "factor_ids": [
+          "filing_demand_strength",
+          "filing_investment_intensity",
+          "filing_management_outlook",
+          "filing_margin_pressure",
+          "filing_uncertainty"
+        ],
+        "factor_rows": 3825,
+        "failures": 3,
+        "needs_ocr": 1,
+        "state": "complete",
+        "updated_at": "2026-11-25T14:00:37+08:00",
+        "token_usage": {
+          "prompt_tokens": 13581690,
+          "completion_tokens": 1888244,
+          "total_tokens": 15469934
+        },
+        "score_completed": 772,
+        "score_total": 772,
+        "parse_completed": 775,
+        "parse_failures": 3,
+        "score_failures": 0,
+        "year": 2022
+      },
+      {
+        "name": "2023 annual filing intelligence",
+        "completed_at": "2026-11-25T01:54:17+08:00",
+        "documents_scored": 728,
+        "documents_total": 730,
+        "factor_ids": [
+          "filing_demand_strength",
+          "filing_investment_intensity",
+          "filing_management_outlook",
+          "filing_margin_pressure",
+          "filing_uncertainty"
+        ],
+        "factor_rows": 3604,
+        "failures": 2,
+        "needs_ocr": 2,
+        "state": "complete",
+        "updated_at": "2026-11-25T01:54:17+08:00",
+        "token_usage": {
+          "prompt_tokens": 12804340,
+          "completion_tokens": 1775623,
+          "total_tokens": 14579963
+        },
+        "score_completed": 728,
+        "score_total": 728,
+        "parse_completed": 730,
+        "parse_failures": 2,
+        "score_failures": 0,
+        "year": 2023
+      },
+      {
+        "name": "2024 annual filing intelligence",
+        "completed_at": "2026-11-25T01:52:49+08:00",
+        "documents_scored": 714,
+        "documents_total": 716,
+        "factor_ids": [
+          "filing_demand_strength",
+          "filing_investment_intensity",
+          "filing_management_outlook",
+          "filing_margin_pressure",
+          "filing_uncertainty"
+        ],
+        "factor_rows": 3547,
+        "failures": 2,
+        "needs_ocr": 0,
+        "state": "complete",
+        "updated_at": "2026-11-25T01:52:49+08:00",
+        "token_usage": {
+          "prompt_tokens": 12603263,
+          "completion_tokens": 1765196,
+          "total_tokens": 14368459
+        },
+        "score_completed": 714,
+        "score_total": 714,
+        "parse_completed": 716,
+        "parse_failures": 2,
+        "score_failures": 0,
+        "year": 2024
+      },
+      {
+        "name": "2025 annual filing intelligence",
+        "completed_at": "2026-11-24T23:07:35+08:00",
+        "documents_scored": 715,
+        "documents_total": 716,
+        "factor_ids": [
+          "filing_demand_strength",
+          "filing_investment_intensity",
+          "filing_management_outlook",
+          "filing_margin_pressure",
+          "filing_uncertainty"
+        ],
+        "factor_rows": 3540,
+        "failures": 1,
+        "needs_ocr": 1,
+        "state": "complete",
+        "updated_at": "2026-11-24T23:07:35+08:00",
+        "token_usage": {
+          "prompt_tokens": 12493450,
+          "completion_tokens": 1753506,
+          "total_tokens": 14246956
+        },
+        "score_completed": 715,
+        "score_total": 715,
+        "parse_completed": 716,
+        "parse_failures": 1,
+        "score_failures": 0,
+        "year": 2025
+      }
+    ],
+    "documents_total": 4360,
+    "parse_completed": 4360,
+    "parse_failures": 10,
+    "score_completed": 4350,
+    "score_total": 4350,
+    "score_failures": 0,
+    "factor_rows": 21560,
+    "needs_ocr": 6,
     "token_usage": {
-      "prompt_tokens": 12493450,
-      "completion_tokens": 1753506,
-      "total_tokens": 14246956
+      "prompt_tokens": 74930822,
+      "completion_tokens": 10593402,
+      "total_tokens": 85524224
     },
-    "score_completed": 715,
-    "score_total": 715,
-    "parse_completed": 716,
-    "parse_failures": 1,
-    "score_failures": 0
+    "updated_at": "2026-11-25T14:00:40+08:00"
   }
 }

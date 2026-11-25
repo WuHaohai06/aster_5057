@@ -22,8 +22,9 @@ prediction.
    data cutoffs, eligibility, portfolio constraints and fallback.
 4. **Honest modes.** Research and retrospective showcase modes use different
    badges, disclosures and colour treatments.
-5. **Snapshot first, live later.** The first version consumes a sanitised JSON
-   snapshot. A read-only FastAPI adapter can later expose the same contract.
+5. **Live with a static fallback.** The browser consumes the same sanitised
+   contract from a read-only FastAPI adapter and falls back to a static JSON
+   snapshot when the service is unavailable.
 
 ## Information architecture
 
@@ -74,20 +75,24 @@ prediction.
 
 ```text
 Current workspace JSON / CSV / Parquet
-                 │
-                 ▼
-scripts/export_dashboard_snapshot.py
-                 │ sanitised, downsampled
-                 ▼
-apps/aster-console/public/data/snapshot.json
-                 │
-                 ▼
-React + TypeScript + Vite static application
+                 |
+                 v
+scripts/export_dashboard_snapshot.py (sanitised contract)
+                 |
+          +------+------+
+          |             |
+          v             v
+FastAPI /api/snapshot   public/data/snapshot.json
+          |             (static fallback)
+          +------+------+
+                 v
+React + TypeScript + Vite application
+       SSE event + 15-second polling
 ```
 
 The browser never receives credentials, raw provider responses, local absolute
-paths, full PDFs or large Parquet files. The same snapshot schema will later be
-served by a read-only FastAPI endpoint and refreshed through polling/SSE.
+paths, process IDs, log paths, full PDFs or large Parquet files. The same
+snapshot schema is served by the read-only endpoint and the static fallback.
 
 ## Snapshot contract
 
@@ -115,11 +120,13 @@ served by a read-only FastAPI endpoint and refreshed through polling/SSE.
 - Filing company/document browser.
 - Portfolio exposure, beta, hedge and decision markers.
 
-### Phase 3 — local live mode
+### Phase 3 — local live mode (implemented)
 
 - Read-only FastAPI service using the snapshot contract.
-- Polling/SSE for background jobs.
-- Optional guarded task controls; no secrets in the browser.
+- Polling/SSE for background jobs and newly mined factor candidates.
+- Six-year filing aggregation and current data-download state.
+- No task-control endpoints and no secrets in the browser.
+- Optional Cloudflare tunnel launcher; access control remains at the tunnel edge.
 
 ## Acceptance criteria for Phase 1
 

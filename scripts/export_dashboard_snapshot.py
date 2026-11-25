@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -31,6 +33,9 @@ def public_job(name: str, path: Path) -> dict[str, Any]:
         "score_completed", "score_total", "score_failures", "factor_rows", "needs_ocr",
         "documents_scored", "completed_at", "failures", "factor_ids",
         "completed", "total", "failed", "succeeded", "current", "phase",
+        "completed_artifacts", "total_artifacts", "instrument_index", "instruments",
+        "stage", "stage_index", "stage_completed", "stages", "jobs_total", "job_index",
+        "current_id", "run_id",
     }
     result = {key: value for key, value in status.items() if key in allowed}
     if isinstance(status.get("token_usage"), dict):
@@ -45,6 +50,147 @@ def public_job(name: str, path: Path) -> dict[str, Any]:
         result.setdefault("parse_failures", result.get("failures", 0))
         result.setdefault("score_failures", 0)
     return {"name": name, **result}
+
+
+def filing_snapshot(years: range = range(2020, 2026)) -> dict[str, Any]:
+    """Return a six-year filing summary without exposing document or host paths."""
+    annual = []
+    for year in years:
+        item = public_job(
+            f"{year} annual filing intelligence",
+            PROJECT_ROOT / f"run/filing_factor_{year}/status.json",
+        )
+        item["year"] = year
+        annual.append(item)
+
+    def total(key: str) -> int:
+        return sum(int(item.get(key) or 0) for item in annual)
+
+    states = {str(item.get("state") or "pending") for item in annual}
+    if states == {"complete"}:
+        state = "complete"
+    elif "running" in states:
+        state = "running"
+    elif states == {"pending"}:
+        state = "pending"
+    else:
+        state = "attention"
+    updated = max((str(item.get("updated_at") or "") for item in annual), default="")
+    usage = {
+        key: sum(int((item.get("token_usage") or {}).get(key) or 0) for item in annual)
+        for key in ("prompt_tokens", "completion_tokens", "total_tokens")
+    }
+    return {
+        "name": "2020-2025 annual filing intelligence",
+        "state": state,
+        "year_start": annual[0]["year"] if annual else None,
+        "year_end": annual[-1]["year"] if annual else None,
+        "years": annual,
+        "documents_total": total("documents_total"),
+        "parse_completed": total("parse_completed"),
+        "parse_failures": total("parse_failures"),
+        "score_completed": total("score_completed"),
+        "score_total": total("score_total"),
+        "score_failures": total("score_failures"),
+        "factor_rows": total("factor_rows"),
+        "needs_ocr": total("needs_ocr"),
+        "token_usage": usage,
+        "updated_at": updated or None,
+    }
+
+
+def quanta_factor_rows(existing: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Expose newly mined price-volume factors as candidates before promotion."""
+    root = PROJECT_ROOT / "vendor/quantaalpha-b7ceb27/data/factorlib"
+    paths = sorted(root.glob("all_factors_library_aster_pv_*.json"), key=lambda path: path.stat().st_mtime)
+    paths = [path for path in paths if "smoke" not in path.name]
+    known_ids = {str(item.get("id")) for item in existing}
+    known_names = {str(item.get("name")) for item in existing}
+    discovered: dict[str, dict[str, Any]] = {}
+    for path in paths:
+        payload = load_json(path, {}) or {}
+        match = re.search(r"aster_pv_([ab]\d{2})", path.name, re.IGNORECASE)
+        group = f"PV-{match.group(1).upper()}" if match else "price_volume"
+        for raw in (payload.get("factors") or {}).values():
+            factor_id = str(raw.get("factor_id") or "")
+            name = str(raw.get("factor_name") or factor_id)
+            if not factor_id or factor_id in known_ids or name in known_names:
+                continue
+            metrics = raw.get("backtest_results") or {}
+            metadata = raw.get("metadata") or {}
+            hypothesis = str(metadata.get("initial_direction") or metadata.get("hypothesis") or "")
+            digest = hashlib.sha256(
+                f"{factor_id}|{raw.get('factor_expression', '')}".encode("utf-8")
+            ).hexdigest()[:12]
+            discovered[name] = {
+                "id": factor_id,
+                "name": name,
+                "group": group,
+                "family": "price_volume",
+                "origin": "quantaalpha",
+                "status": "candidate",
+                "researchEligible": False,
+                "demoEligible": False,
+                "pitCompliant": True,
+                "expression": raw.get("factor_expression", ""),
+                "description": raw.get("factor_description", ""),
+                "hypothesis": hypothesis,
+                "mechanism": raw.get("factor_description", ""),
+                "expectedDirection": "Empirical sign remains subject to canonical evaluation.",
+                "falsificationCriteria": [
+                    "Reject if the signal depends on isolated volume spikes.",
+                    "Reject if the sign is unstable across evaluation periods.",
+                ],
+                "mechanismSource": "quantaalpha_hypothesis",
+                "tags": ["ai-mined", "price-volume", group.lower()],
+                "version": "mined-candidate-v1",
+                "statusReason": "Awaiting canonical evaluation and factor-library promotion.",
+                "metrics": {
+                    "rankIc": metrics.get("Rank IC"),
+                    "rankIcIr": metrics.get("Rank ICIR"),
+                    "coverage": None,
+                    "turnover": None,
+                    "correlation": None,
+                    "observations": None,
+                },
+                "yearlyRankIc": {},
+                "artifact": {
+                    "rows": 0,
+                    "instruments": 0,
+                    "firstDate": None,
+                    "lastDate": None,
+                    "digest": digest,
+                },
+            }
+    return list(discovered.values())
+
+
+def factor_mining_snapshot() -> dict[str, Any]:
+    root = PROJECT_ROOT / "vendor/quantaalpha-b7ceb27/data/factorlib"
+    paths = [
+        path for path in root.glob("all_factors_library_aster_pv_*.json")
+        if "smoke" not in path.name
+    ]
+    directions: set[str] = set()
+    factors = 0
+    for path in paths:
+        match = re.search(r"aster_pv_([ab]\d{2})", path.name, re.IGNORECASE)
+        if match:
+            directions.add(match.group(1).upper())
+        payload = load_json(path, {}) or {}
+        factors += len(payload.get("factors") or {})
+    return {
+        "name": "QuantaAlpha price-volume mining",
+        "state": "complete" if len(directions) >= 8 else "running" if directions else "pending",
+        "completed": len(directions),
+        "total": 8,
+        "factor_count": factors,
+        "factor_ids": sorted(directions),
+        "updated_at": (
+            datetime.fromtimestamp(max(path.stat().st_mtime for path in paths)).astimezone().isoformat()
+            if paths else None
+        ),
+    }
 
 
 def factor_rows(catalog: dict[str, Any]) -> list[dict[str, Any]]:
@@ -202,32 +348,39 @@ def portfolio_snapshot() -> dict[str, Any]:
 def build_snapshot() -> dict[str, Any]:
     catalog = load_json(PROJECT_ROOT / "data/curated/factor_library/catalog.json", {}) or {}
     factors = factor_rows(catalog)
-    filing = public_job(
-        "2025 annual filing intelligence",
-        PROJECT_ROOT / "run/filing_factor_2025/status.json",
-    )
+    factors.extend(quanta_factor_rows(factors))
+    filing = filing_snapshot()
+    mining = factor_mining_snapshot()
+    market = public_job("CSI500 market", PROJECT_ROOT / "run/akshare_market/status.json")
+    factor_inputs = public_job("factor inputs", PROJECT_ROOT / "run/factor_input_download/status.json")
+    financial = public_job("financial statements", PROJECT_ROOT / "run/parallel_financial/status.json")
     jobs = [
         filing,
-        public_job("CSI500 market", PROJECT_ROOT / "run/akshare_market/status.json"),
-        public_job("factor inputs", PROJECT_ROOT / "run/factor_input_download/status.json"),
-        public_job("financial statements", PROJECT_ROOT / "run/parallel_financial/status.json"),
+        mining,
+        market,
+        factor_inputs,
+        financial,
     ]
     council = council_snapshot()
     validated = sum(item["status"] in {"validated", "council_approved", "demo_selected"} for item in factors)
     quanta = sum(item["origin"] == "quantaalpha" for item in factors)
     scored = int(filing.get("score_completed") or 0)
     score_total = int(filing.get("score_total") or filing.get("documents_total") or 0)
+    data_running = any(item.get("state") == "running" for item in (market, factor_inputs, financial))
+    data_detail = "CSI500 PIT + OHLCV"
+    if factor_inputs.get("total_artifacts"):
+        data_detail = f"{factor_inputs.get('completed_artifacts', 0)}/{factor_inputs['total_artifacts']} factor inputs"
     pipeline = [
-        {"id": "data", "label": "Data spine", "detail": "CSI500 PIT + OHLCV", "state": "complete", "view": "overview"},
-        {"id": "filings", "label": "Filing intelligence", "detail": f"{scored}/{score_total} scored", "state": "running" if scored < score_total else "complete", "view": "filings"},
-        {"id": "mining", "label": "AI factor mining", "detail": f"{quanta} Quanta candidates", "state": "complete" if quanta else "pending", "view": "factors"},
-        {"id": "evaluation", "label": "Canonical evaluation", "detail": f"{validated}/{len(factors)} validated", "state": "complete", "view": "factors"},
+        {"id": "data", "label": "Data spine", "detail": data_detail, "state": "running" if data_running else "complete", "view": "overview"},
+        {"id": "filings", "label": "Filing intelligence", "detail": f"{scored}/{score_total} scored (2020-25)", "state": "running" if scored < score_total else "complete", "view": "filings"},
+        {"id": "mining", "label": "AI factor mining", "detail": f"{mining['completed']}/{mining['total']} directions · {quanta} candidates", "state": mining["state"], "view": "factors"},
+        {"id": "evaluation", "label": "Canonical evaluation", "detail": f"{validated}/{len(factors)} validated", "state": "complete" if validated == len(factors) else "attention", "view": "factors"},
         {"id": "council", "label": "Factor Council", "detail": f"{len(council['decision']['selectedGroups'])} groups selected", "state": "attention" if council["decision"]["fallbackUsed"] else "complete", "view": "council"},
         {"id": "portfolio", "label": "Portfolio replay", "detail": "Optimisation + IC hedge", "state": "complete", "view": "portfolio"},
     ]
     return {
         "meta": {
-            "schema": "aster-console-snapshot-v1",
+            "schema": "aster-console-snapshot-v2",
             "generatedAt": datetime.now().astimezone().isoformat(),
             "asOf": council["packet"].get("decisionAt") or datetime.now().date().isoformat(),
             "catalogDigest": str(catalog.get("catalog_digest", ""))[:12],

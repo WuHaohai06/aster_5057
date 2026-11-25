@@ -245,17 +245,25 @@ Council 使用三个 Reviewer 和一个 Chair。模型输出必须符合 Pydanti
 ## Aster Research Console
 
 交互式前端位于 `apps/aster-console`，提供流程总览、因子库、因子详情、
-AI Council、财报智能和组合回放页面。前端只消费裁剪后的只读快照，不会
-暴露 API Key、原始 PDF、大型 Parquet 或本机绝对路径。
+AI Council、六年财报智能和组合回放页面。实时模式由只读 FastAPI 服务
+聚合本地任务状态，通过 SSE 通知与 15 秒轮询自动刷新；API 不提供任务写入
+端点，也不会暴露 API Key、原始 PDF、大型 Parquet、日志路径或本机绝对路径。
 
 ```powershell
-python .\scripts\export_dashboard_snapshot.py
-cd .\apps\aster-console
-npm install
-npm run dev
+# 首次启动会安装 requirements-console.txt 并构建前端
+powershell -ExecutionPolicy Bypass -File .\scripts\start_aster_console_live.ps1
+# 浏览器打开 http://127.0.0.1:8765/
+
+# 停止后台服务
+powershell -ExecutionPolicy Bypass -File .\scripts\stop_aster_console_live.ps1
 ```
 
-产品规划和后续实时 API 方案见
+如需临时公网演示，先安装 `cloudflared`，保持本地服务运行，然后执行
+`scripts/start_aster_console_tunnel.ps1`。Quick Tunnel URL 是公开地址；正式或
+持续分享应使用 Named Tunnel 并在 Cloudflare Access 设置访问控制。项目内部
+没有重新加入登录页。
+
+静态降级版本仍可通过 `python scripts/export_dashboard_snapshot.py` 生成。产品规划见
 [docs/aster_console_frontend_plan.md](docs/aster_console_frontend_plan.md)。
 
 ```powershell
