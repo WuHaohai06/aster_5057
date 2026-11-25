@@ -359,6 +359,12 @@ def _quanta_records(
         return []
     library = _load_json(library_path)
     version = f"quantaalpha-library-{library['metadata'].get('version', '1.0')}"
+    direction_match = re.search(r"aster_pv_([ab]\d{2})", library_path.name, re.IGNORECASE)
+    factor_group = (
+        f"quanta_pv_{direction_match.group(1).lower()}"
+        if direction_match
+        else "quanta_price_volume_seed"
+    )
     records = []
     for factor_id, item in sorted(library.get("factors", {}).items()):
         source = Path(item["cache_location"]["result_h5_path"])
@@ -367,7 +373,7 @@ def _quanta_records(
             source=source,
             output=output,
             factor_id=factor_id,
-            group="quanta_shock_reversal",
+            group=factor_group,
             version=version,
         )
         artifact = _frame_artifact(
@@ -400,7 +406,7 @@ def _quanta_records(
             FactorRecord(
                 factor_id=factor_id,
                 display_name=item.get("factor_name", factor_id),
-                factor_group="quanta_shock_reversal",
+                factor_group=factor_group,
                 family="price_volume_ai_mined",
                 origin="quantaalpha",
                 version=version,
@@ -518,11 +524,14 @@ def build_factor_library(
     if missing:
         raise FileNotFoundError(f"factor library inputs are missing: {missing}")
     if quanta_library_path is None:
-        candidates = sorted(
-            (project_root / "vendor/quantaalpha-b7ceb27/data/factorlib").glob("*.json"),
+        quanta_library_paths = sorted(
+            (project_root / "vendor/quantaalpha-b7ceb27/data/factorlib").glob(
+                "all_factors_library_aster_pv_*.json"
+            ),
             key=lambda path: path.stat().st_mtime,
         )
-        quanta_library_path = candidates[-1] if candidates else None
+    else:
+        quanta_library_paths = [quanta_library_path]
 
     registry = _load_json(registry_path)
     diagnostics = _load_json(diagnostics_path)
@@ -545,14 +554,15 @@ def build_factor_library(
     records.extend(
         _text_records(project_root=project_root, path=text_path, manifest_path=text_manifest)
     )
-    if quanta_library_path is not None:
-        records.extend(
-            _quanta_records(
-                project_root=project_root,
-                output_root=output_root,
-                library_path=quanta_library_path.resolve(),
-            )
-        )
+    quanta_by_id: dict[str, FactorRecord] = {}
+    for library_path in quanta_library_paths:
+        for record in _quanta_records(
+            project_root=project_root,
+            output_root=output_root,
+            library_path=library_path.resolve(),
+        ):
+            quanta_by_id[record.factor_id] = record
+    records.extend(quanta_by_id.values())
 
     previous_path = output_root / "catalog.json"
     if previous_path.exists():
