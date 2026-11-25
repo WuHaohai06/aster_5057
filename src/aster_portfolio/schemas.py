@@ -50,6 +50,8 @@ class OptimizationDiagnostics(StrictModel):
     estimated_stock_cost: float
     estimated_futures_cost: float
     max_name_weight: float
+    industry_exposures: dict[str, float] = Field(default_factory=dict)
+    industry_active_exposures: dict[str, float] = Field(default_factory=dict)
     constraint_slack: dict[str, float]
 
 

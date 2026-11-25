@@ -23,14 +23,25 @@ from aster_council.storage import write_run_artifacts
 from .schemas import PortfolioProfile, StrictModel
 
 
-PORTFOLIO_RESEARCH_PROMPT_VERSION = "aster-portfolio-council-research-v1.2"
-PORTFOLIO_SHOWCASE_PROMPT_VERSION = "aster-portfolio-council-showcase-v1.0"
+PORTFOLIO_RESEARCH_PROMPT_VERSION = "aster-portfolio-council-research-v1.3"
+PORTFOLIO_SHOWCASE_PROMPT_VERSION = "aster-portfolio-council-showcase-v1.1"
 
 
 class PortfolioReviewerRole(str, Enum):
     ALPHA = "alpha_allocation_reviewer"
     RISK = "portfolio_risk_reviewer"
     EXECUTION = "execution_liquidity_reviewer"
+
+
+class IndustryOperatingEvidence(StrictModel):
+    industry_name: str
+    benchmark_weight: float = Field(ge=0.0, le=1.0)
+    member_count: int = Field(ge=1)
+    return_20: float
+    return_60: float
+    volatility_20: float = Field(ge=0.0)
+    breadth_above_60d_average: float = Field(ge=0.0, le=1.0)
+    evidence_id: str
 
 
 class PortfolioOperatingEvidence(StrictModel):
@@ -46,6 +57,9 @@ class PortfolioOperatingEvidence(StrictModel):
     current_estimated_net_beta: float
     tradable_coverage: float = Field(ge=0.0, le=1.0)
     recent_one_way_turnover: float = Field(ge=0.0)
+    industries: list[IndustryOperatingEvidence] = Field(default_factory=list)
+    industry_snapshot_date: date | None = None
+    industry_snapshot_uses_future_information: bool = False
     source_ids: list[str] = Field(min_length=1)
     limitations: list[str] = Field(default_factory=list)
 
@@ -54,6 +68,9 @@ class PortfolioShowcaseDirective(StrictModel):
     uses_hindsight_for_scenario_selection: Literal[True] = True
     narrative_style: Literal["ex_ante_reenactment"] = "ex_ante_reenactment"
     target_profile_id: str
+    target_industry_overweights: list[str] = Field(default_factory=list, max_length=3)
+    target_industry_underweights: list[str] = Field(default_factory=list, max_length=3)
+    target_industry_active_tilt: float = Field(default=0.0, ge=0.0, le=0.10)
     future_window_start: date
     future_window_end: date
     retrospective_outcome_summary: str = Field(min_length=20)
@@ -65,6 +82,10 @@ class PortfolioShowcaseDirective(StrictModel):
             raise ValueError("showcase directive must retain the fixed disclosure")
         if self.future_window_end < self.future_window_start:
             raise ValueError("future_window_end cannot precede future_window_start")
+        if set(self.target_industry_overweights).intersection(self.target_industry_underweights):
+            raise ValueError("an industry cannot be both overweight and underweight")
+        if (self.target_industry_overweights or self.target_industry_underweights) and not self.target_industry_active_tilt:
+            raise ValueError("industry selections require a positive active tilt")
         return self
 
 
@@ -102,6 +123,11 @@ class PortfolioCouncilPacket(StrictModel):
                 raise ValueError("showcase future window must start after decision_at")
             if self.showcase_directive.target_profile_id not in profile_ids:
                 raise ValueError("showcase target profile is not approved")
+            industries = {item.industry_name for item in self.evidence.industries}
+            selected = set(self.showcase_directive.target_industry_overweights)
+            selected.update(self.showcase_directive.target_industry_underweights)
+            if not selected.issubset(industries):
+                raise ValueError("showcase target contains an unknown industry")
         return self
 
 
@@ -124,6 +150,9 @@ class PortfolioReviewerBallot(StrictModel):
 class PortfolioChairRecommendation(StrictModel):
     decision_at: date
     selected_profile_id: str
+    industry_overweights: list[str] = Field(default_factory=list, max_length=3)
+    industry_underweights: list[str] = Field(default_factory=list, max_length=3)
+    industry_active_tilt: float = Field(default=0.0, ge=0.0, le=0.10)
     rationale: str = Field(min_length=20)
     evidence_ids: list[str] = Field(min_length=1)
     dissent: list[str] = Field(default_factory=list)
@@ -152,6 +181,9 @@ class PortfolioCouncilDecision(StrictModel):
     showcase_future_window_end: date | None = None
     status: Literal["accepted", "fallback"]
     selected_profile_id: str
+    industry_overweights: list[str] = Field(default_factory=list, max_length=3)
+    industry_underweights: list[str] = Field(default_factory=list, max_length=3)
+    industry_active_tilt: float = Field(default=0.0, ge=0.0, le=0.10)
     rationale: str
     evidence_ids: list[str]
     dissent: list[str] = Field(default_factory=list)
@@ -193,7 +225,10 @@ def build_portfolio_council_packet(
         "evidence": evidence.model_dump(mode="json"),
         "profiles": [profile.model_dump(mode="json") for profile in profiles],
         "fallback_profile_id": fallback_profile_id,
-        "evidence_ids": sorted(set(evidence.source_ids)),
+        "evidence_ids": sorted(
+            set(evidence.source_ids)
+            | {item.evidence_id for item in evidence.industries}
+        ),
         "mode": mode.value,
         "showcase_directive": (
             showcase_directive.model_dump(mode="json") if showcase_directive else None
@@ -214,6 +249,9 @@ top-level `type` key. If evidence is synthetic, incomplete or internally
 inconsistent, prefer the declared fallback profile. For reviewer ballots, the
 votes array MUST contain exactly one explicit vote for every approved profile
 listed in the packet. Never omit a profile, even when it is clearly unsuitable.
+The chair may select up to three industry overweights and three industry
+underweights from supplied industry evidence. industry_active_tilt must be one
+of 0.0, 0.05, 0.08 or 0.10. Use 0.0 and empty lists when evidence is weak.
 """.strip()
 
 SHOWCASE_PROMPT = """
@@ -224,6 +262,8 @@ decision_at and make that approved target persuasive using only supplied PIT
 evidence IDs. Do not cite the retrospective outcome as if it were known then,
 fabricate news, invent exposures, or alter profile parameters. Vote exactly once
 on every approved profile and return only one JSON object matching the schema.
+The chair must reproduce the Demo Director target industry overweights,
+underweights and active tilt exactly.
 """.strip()
 
 
@@ -276,10 +316,29 @@ def _validate_chair(
         errors.append("chair cites unknown evidence")
     if recommendation.use_fallback and recommendation.selected_profile_id != packet.fallback_profile_id:
         errors.append("explicit fallback must select fallback_profile_id")
+    available_industries = {item.industry_name for item in packet.evidence.industries}
+    overweights = set(recommendation.industry_overweights)
+    underweights = set(recommendation.industry_underweights)
+    if overweights.intersection(underweights):
+        errors.append("an industry cannot be both overweight and underweight")
+    if not overweights.union(underweights).issubset(available_industries):
+        errors.append("chair selected an unknown industry")
+    if recommendation.industry_active_tilt not in {0.0, 0.05, 0.08, 0.10}:
+        errors.append("industry active tilt is not an approved level")
+    if (overweights or underweights) and recommendation.industry_active_tilt == 0.0:
+        errors.append("industry selections require a positive active tilt")
+    if recommendation.use_fallback and (overweights or underweights):
+        errors.append("research fallback must remain industry neutral")
     if packet.mode == CouncilMode.SHOWCASE_REENACTMENT:
         assert packet.showcase_directive is not None
         if recommendation.selected_profile_id != packet.showcase_directive.target_profile_id:
             errors.append("showcase chair must select the Demo Director target profile")
+        if recommendation.industry_overweights != packet.showcase_directive.target_industry_overweights:
+            errors.append("showcase chair must select the target industry overweights")
+        if recommendation.industry_underweights != packet.showcase_directive.target_industry_underweights:
+            errors.append("showcase chair must select the target industry underweights")
+        if recommendation.industry_active_tilt != packet.showcase_directive.target_industry_active_tilt:
+            errors.append("showcase chair must select the target industry active tilt")
         if recommendation.use_fallback:
             errors.append("showcase target selection is not the research fallback")
     return errors
@@ -329,8 +388,14 @@ class PortfolioCouncilOrchestrator:
         if packet.mode == CouncilMode.SHOWCASE_REENACTMENT:
             assert packet.showcase_directive is not None
             selected_profile_id = packet.showcase_directive.target_profile_id
+            industry_overweights = packet.showcase_directive.target_industry_overweights
+            industry_underweights = packet.showcase_directive.target_industry_underweights
+            industry_active_tilt = packet.showcase_directive.target_industry_active_tilt
         else:
             selected_profile_id = packet.fallback_profile_id
+            industry_overweights = []
+            industry_underweights = []
+            industry_active_tilt = 0.0
         return PortfolioCouncilDecision(
             run_id=run_id,
             created_at=now,
@@ -351,6 +416,9 @@ class PortfolioCouncilOrchestrator:
             ),
             status="fallback",
             selected_profile_id=selected_profile_id,
+            industry_overweights=industry_overweights,
+            industry_underweights=industry_underweights,
+            industry_active_tilt=industry_active_tilt,
             rationale="Deterministic portfolio-policy fallback; no LLM-created exposure was used.",
             evidence_ids=packet.evidence_ids,
             confidence=0.0,
@@ -408,7 +476,8 @@ class PortfolioCouncilOrchestrator:
         user_prompt = (
             f"Schema:\n{json.dumps(PortfolioChairRecommendation.model_json_schema(), ensure_ascii=False)}"
             "\n\nThe top-level keys must be exactly: decision_at, selected_profile_id, "
-            "rationale, evidence_ids, dissent, confidence, use_fallback, fallback_reason. "
+            "industry_overweights, industry_underweights, industry_active_tilt, rationale, "
+            "evidence_ids, dissent, confidence, use_fallback, fallback_reason. "
             "Never add a type or json_object key."
             f"\n\nPacket:\n{packet.model_dump_json(indent=2)}"
             f"\n\nBallots:\n{json.dumps({key: value.model_dump(mode='json') for key, value in ballots.items()}, ensure_ascii=False, indent=2)}"
@@ -450,6 +519,9 @@ class PortfolioCouncilOrchestrator:
                 ),
                 status="fallback" if recommendation.use_fallback else "accepted",
                 selected_profile_id=recommendation.selected_profile_id,
+                industry_overweights=recommendation.industry_overweights,
+                industry_underweights=recommendation.industry_underweights,
+                industry_active_tilt=recommendation.industry_active_tilt,
                 rationale=recommendation.rationale,
                 evidence_ids=recommendation.evidence_ids,
                 dissent=recommendation.dissent,

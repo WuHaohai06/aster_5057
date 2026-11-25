@@ -55,6 +55,9 @@ class PortfolioBacktester:
         forecasts: dict[pd.Timestamp, pd.Series],
         default_profile: PortfolioProfile,
         profile_by_signal: dict[pd.Timestamp, PortfolioProfile] | None = None,
+        industries: pd.Series | None = None,
+        industry_benchmark_weights: pd.DataFrame | None = None,
+        industry_policy_by_signal: dict[pd.Timestamp, dict] | None = None,
         eligibility: pd.DataFrame | None = None,
         risk_window: int = 120,
         risk_horizon_days: int = 5,
@@ -75,6 +78,11 @@ class PortfolioBacktester:
         benchmark_returns = benchmark_close.pct_change(fill_method=None)
         futures_returns = futures_close.pct_change(fill_method=None)
         profile_by_signal = profile_by_signal or {}
+        industry_policy_by_signal = industry_policy_by_signal or {}
+        if industries is not None:
+            industries = industries.reindex(close.columns).fillna("Unknown").astype(str)
+        if industry_benchmark_weights is not None:
+            industry_benchmark_weights = industry_benchmark_weights.sort_index()
         forecast_map = {pd.Timestamp(key): value for key, value in forecasts.items()}
 
         weights = pd.Series(0.0, index=close.columns)
@@ -84,6 +92,7 @@ class PortfolioBacktester:
         target_rows: list[pd.Series] = []
         optimizations: list[OptimizationResult] = []
         last_estimated_beta = 0.0
+        last_industry_policy: tuple[tuple[str, ...], tuple[str, ...], float] = ((), (), 0.0)
 
         for position in range(1, len(index)):
             current_date = index[position]
@@ -105,8 +114,28 @@ class PortfolioBacktester:
             cost_fraction = 0.0
             rebalanced = False
             profile_id = ""
+            industry_overweights: tuple[str, ...] = ()
+            industry_underweights: tuple[str, ...] = ()
+            industry_active_tilt = 0.0
             if signal_date in forecast_map:
                 profile = profile_by_signal.get(signal_date, default_profile)
+                industry_policy = industry_policy_by_signal.get(signal_date, {})
+                industry_overweights = tuple(industry_policy.get("overweights", ()))
+                industry_underweights = tuple(industry_policy.get("underweights", ()))
+                industry_active_tilt = float(industry_policy.get("active_tilt", 0.0))
+                industry_signature = (
+                    industry_overweights,
+                    industry_underweights,
+                    industry_active_tilt,
+                )
+                industry_policy_changed = industry_signature != last_industry_policy
+                benchmark_industry = None
+                if industry_benchmark_weights is not None:
+                    eligible_dates = industry_benchmark_weights.index[
+                        industry_benchmark_weights.index <= signal_date
+                    ]
+                    if len(eligible_dates):
+                        benchmark_industry = industry_benchmark_weights.loc[eligible_dates[-1]]
                 expected = forecast_map[signal_date].reindex(close.columns)
                 eligible = (
                     close.loc[signal_date].notna()
@@ -133,7 +162,21 @@ class PortfolioBacktester:
                         previous_futures_short=futures_short,
                         eligible=eligible,
                         profile=profile,
-                        turnover_limit=(profile.stock_target if initial_build else None),
+                        turnover_limit=(
+                            profile.stock_target
+                            if initial_build
+                            else 1.0
+                            if industry_policy_changed
+                            else max(
+                                profile.max_one_way_turnover,
+                                min(1.0, 2.0 * industry_active_tilt * len(industry_overweights)),
+                            )
+                        ),
+                        industries=industries,
+                        industry_benchmark_weights=benchmark_industry,
+                        industry_overweights=industry_overweights,
+                        industry_underweights=industry_underweights,
+                        industry_active_tilt=industry_active_tilt,
                     )
                 )
                 target = pd.Series(result.stock_weights).reindex(close.columns).fillna(0.0)
@@ -150,6 +193,7 @@ class PortfolioBacktester:
                 futures_short = result.futures_short_weight
                 last_estimated_beta = result.diagnostics.estimated_net_beta
                 profile_id = profile.profile_id
+                last_industry_policy = industry_signature
                 optimizations.append(result)
                 target.name = current_date
                 target_rows.append(target)
@@ -172,6 +216,9 @@ class PortfolioBacktester:
                     "rebalanced": rebalanced,
                     "signal_date": signal_date if rebalanced else pd.NaT,
                     "profile_id": profile_id,
+                    "industry_overweights": ",".join(industry_overweights),
+                    "industry_underweights": ",".join(industry_underweights),
+                    "industry_active_tilt": industry_active_tilt,
                 }
             )
 

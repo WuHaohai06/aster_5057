@@ -336,11 +336,23 @@ def portfolio_snapshot() -> dict[str, Any]:
     )
     runs = []
     for path in candidates[:3]:
+        manifest = load_json(path / "manifest.json", {}) or {}
+        council = manifest.get("portfolio_council") or {}
         runs.append({
             "id": path.name,
             "label": path.name.replace("_", " "),
             "metrics": load_json(path / "metrics.json", {}) or {},
             "curve": curve(path / "daily.csv"),
+            "council": {
+                "selectedProfile": manifest.get("selected_profile_id"),
+                "overweights": council.get("industry_overweights", []),
+                "underweights": council.get("industry_underweights", []),
+                "activeTilt": council.get("industry_active_tilt", 0.0),
+                "effectiveStart": council.get("effective_start"),
+                "effectiveEnd": council.get("effective_end"),
+                "usesHindsight": bool(council.get("uses_hindsight", False)),
+                "industryOverrideSignals": manifest.get("industry_override_signals", 0),
+            },
         })
     return {"runs": runs}
 

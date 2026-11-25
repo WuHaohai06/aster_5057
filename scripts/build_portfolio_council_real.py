@@ -13,6 +13,7 @@ import pandas as pd
 from aster_data.io import write_bytes_atomic
 from aster_council.schemas import CouncilMode
 from aster_portfolio.council import (
+    IndustryOperatingEvidence,
     PortfolioOperatingEvidence,
     PortfolioShowcaseDirective,
     build_portfolio_council_packet,
@@ -41,6 +42,8 @@ def main() -> None:
         "--mode", choices=[mode.value for mode in CouncilMode], default=CouncilMode.RESEARCH.value
     )
     parser.add_argument("--showcase-directive", type=Path)
+    parser.add_argument("--industry-snapshot", type=Path)
+    parser.add_argument("--industry-benchmark", type=Path)
     args = parser.parse_args()
     directive = (
         PortfolioShowcaseDirective.model_validate_json(
@@ -108,10 +111,74 @@ def main() -> None:
         f"portfolio-daily:sha256:{_sha256(daily_path)}",
         f"forecast-diagnostics:sha256:{_sha256(forecast_path)}",
     ]
+    industry_evidence: list[IndustryOperatingEvidence] = []
+    industry_snapshot_date = None
+    industry_uses_future_information = False
+    if bool(args.industry_snapshot) != bool(args.industry_benchmark):
+        raise ValueError("industry snapshot and benchmark must be supplied together")
+    if args.industry_snapshot and args.industry_benchmark:
+        snapshot = pd.read_parquet(args.industry_snapshot)
+        snapshot["snapshot_date"] = pd.to_datetime(snapshot["snapshot_date"]).dt.normalize()
+        industry_snapshot_date = snapshot["snapshot_date"].max().date()
+        industry_uses_future_information = pd.Timestamp(industry_snapshot_date) > as_of
+        mapping = snapshot.set_index("instrument")["industry_name"].astype(str)
+        benchmark_industry = pd.read_parquet(args.industry_benchmark)
+        benchmark_industry["date"] = pd.to_datetime(benchmark_industry["date"]).dt.normalize()
+        benchmark_industry = benchmark_industry.loc[benchmark_industry["date"] <= as_of]
+        latest_industry_date = benchmark_industry["date"].max()
+        latest_industry = benchmark_industry.loc[
+            benchmark_industry["date"].eq(latest_industry_date)
+        ].set_index("industry_name")
+        industry_source = f"industry-snapshot:sha256:{_sha256(args.industry_snapshot)}"
+        industry_benchmark_source = (
+            f"industry-benchmark:sha256:{_sha256(args.industry_benchmark)}"
+        )
+        evidence_ids.extend([industry_source, industry_benchmark_source])
+        member_groups: dict[str, list[str]] = {}
+        for instrument in members:
+            industry = mapping.get(instrument, "Unknown")
+            if industry != "Unknown":
+                member_groups.setdefault(industry, []).append(instrument)
+        industry_close = (
+            stock.loc[stock["instrument"].isin(members), ["date", "instrument", "close"]]
+            .pivot(index="date", columns="instrument", values="close")
+            .sort_index()
+            .loc[:as_of]
+        )
+        for industry, names in sorted(member_groups.items()):
+            if len(names) < 5 or industry not in latest_industry.index:
+                continue
+            panel = industry_close.reindex(columns=names)
+            if len(panel) < 61:
+                continue
+            return_20 = panel.iloc[-1].div(panel.iloc[-21]).sub(1.0).mean()
+            return_60 = panel.iloc[-1].div(panel.iloc[-61]).sub(1.0).mean()
+            daily_return = panel.pct_change(fill_method=None).mean(axis=1)
+            average_60 = panel.tail(60).mean(axis=0)
+            breadth_valid = panel.iloc[-1].notna() & average_60.notna()
+            evidence_id = f"industry:{industry}:asof:{as_of.date().isoformat()}"
+            industry_evidence.append(
+                IndustryOperatingEvidence(
+                    industry_name=industry,
+                    benchmark_weight=float(latest_industry.loc[industry, "benchmark_weight"]),
+                    member_count=len(names),
+                    return_20=float(return_20),
+                    return_60=float(return_60),
+                    volatility_20=float(daily_return.tail(20).std(ddof=1) * np.sqrt(252)),
+                    breadth_above_60d_average=float(
+                        panel.iloc[-1].loc[breadth_valid].gt(average_60.loc[breadth_valid]).mean()
+                    ),
+                    evidence_id=evidence_id,
+                )
+            )
     limitations = [
         "The forecaster artifact does not persist per-security matured predictions, so trailing rank IC is unavailable.",
         "The Council may select only a pre-approved deterministic profile; it cannot invent exposures or trades.",
     ]
+    if industry_uses_future_information:
+        limitations.append(
+            "Industry labels use a static snapshot dated after the decision cutoff; industry timing is permitted only for the disclosed showcase reenactment."
+        )
     market_manifest_path = args.market.parent / "manifest.json"
     if market_manifest_path.exists():
         market_manifest = json.loads(market_manifest_path.read_text(encoding="utf-8"))
@@ -136,6 +203,9 @@ def main() -> None:
         current_estimated_net_beta=float(daily["estimated_net_beta"].iloc[-1]),
         tradable_coverage=float(tradable.mean()),
         recent_one_way_turnover=float(daily["stock_turnover"].tail(20).sum()),
+        industries=industry_evidence,
+        industry_snapshot_date=industry_snapshot_date,
+        industry_snapshot_uses_future_information=industry_uses_future_information,
         source_ids=evidence_ids,
         limitations=limitations,
     )

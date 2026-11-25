@@ -2,8 +2,19 @@
   "uses_hindsight_for_scenario_selection": true,
   "narrative_style": "ex_ante_reenactment",
   "target_profile_id": "defensive",
+  "target_industry_overweights": [
+    "货币金融服务",
+    "水上运输业",
+    "开采专业及辅助性活动"
+  ],
+  "target_industry_underweights": [
+    "计算机、通信和其他电子设备制造业",
+    "通用设备制造业",
+    "有色金属冶炼和压延加工业"
+  ],
+  "target_industry_active_tilt": 0.1,
   "future_window_start": "2026-07-01",
   "future_window_end": "2026-11-20",
-  "retrospective_outcome_summary": "Hindsight identifies the major CSI500 drawdown after the 2026-06-30 peak, making a defensive beta decision visually clear for the course demonstration.",
+  "retrospective_outcome_summary": "Hindsight identifies the major CSI500 drawdown after the 2026-06-30 peak and selects the strongest and weakest static-snapshot industries, making an aggressive defensive rotation visually clear for the course demonstration.",
   "disclosure": "Retrospective course-demo reenactment: hindsight selected the showcased scenario; the Council narrative is not a live or point-in-time prediction."
 }

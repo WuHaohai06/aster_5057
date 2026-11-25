@@ -45,6 +45,7 @@ def parser() -> argparse.ArgumentParser:
     export = commands.add_parser("export-council")
     export.add_argument("--mode", choices=["research", "showcase"], default="research")
     export.add_argument("--output", type=Path, required=True)
+    export.add_argument("--group", action="append", default=[])
     quanta = commands.add_parser("evaluate-quanta")
     quanta.add_argument(
         "--market", type=Path,
@@ -58,6 +59,19 @@ def parser() -> argparse.ArgumentParser:
     quanta.add_argument("--horizon", type=int, default=20)
     quanta.add_argument("--min-coverage", type=float, default=0.75)
     quanta.add_argument("--min-observations", type=int, default=24)
+    all_factors = commands.add_parser("evaluate-all")
+    all_factors.add_argument(
+        "--market", type=Path,
+        default=PROJECT_ROOT / "data/curated/market/daily.parquet",
+    )
+    all_factors.add_argument(
+        "--evidence-root", type=Path,
+        default=PROJECT_ROOT / "data/council/factor_evidence",
+    )
+    all_factors.add_argument("--as-of", required=True)
+    all_factors.add_argument("--horizon", type=int, default=20)
+    all_factors.add_argument("--min-coverage", type=float, default=0.75)
+    all_factors.add_argument("--min-observations", type=int, default=24)
     return root
 
 
@@ -106,8 +120,9 @@ def main() -> None:
             catalog_path=output_root / "catalog.json",
             output_root=args.output,
             mode=args.mode,
+            groups=set(args.group) if args.group else None,
         )
-    elif args.command == "evaluate-quanta":
+    elif args.command in {"evaluate-quanta", "evaluate-all"}:
         payload = evaluate_quantaalpha_candidates(
             project_root=PROJECT_ROOT,
             catalog_path=output_root / "catalog.json",
@@ -117,6 +132,7 @@ def main() -> None:
             horizon=args.horizon,
             min_coverage=args.min_coverage,
             min_observations=args.min_observations,
+            origins=None if args.command == "evaluate-all" else ("quantaalpha",),
         )
     else:
         catalog = load_catalog(output_root / "catalog.json")

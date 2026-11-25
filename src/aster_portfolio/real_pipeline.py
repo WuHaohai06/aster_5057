@@ -50,6 +50,9 @@ def _selected_groups(
         "packet_digest": decision.packet_digest,
         "decision_sha256": hashlib.sha256(raw).hexdigest(),
         "fallback_used": decision.fallback_used,
+        "mode": decision.mode.value,
+        "uses_hindsight": decision.uses_hindsight,
+        "disclosure": decision.disclosure,
     }
 
 
@@ -84,6 +87,9 @@ def _selected_profile(
         "uses_hindsight": decision.uses_hindsight,
         "effective_start": effective_start.date().isoformat(),
         "effective_end": effective_end.date().isoformat() if effective_end is not None else None,
+        "industry_overweights": decision.industry_overweights,
+        "industry_underweights": decision.industry_underweights,
+        "industry_active_tilt": decision.industry_active_tilt,
     }
 
 
@@ -159,6 +165,8 @@ def run_real_pipeline(
     factor_decision_path: Path | None = None,
     portfolio_decision_path: Path | None = None,
     factor_catalog_path: Path | None = None,
+    industry_snapshot_path: Path | None = None,
+    industry_benchmark_path: Path | None = None,
     horizon_days: int = 20,
     training_sessions: int = 504,
     rebalance_every: int = 5,
@@ -255,6 +263,9 @@ def run_real_pipeline(
         replay_end=pd.Timestamp(end),
     )
     profile_by_signal = {}
+    industry_policy_by_signal: dict[pd.Timestamp, dict] = {}
+    industries = None
+    industry_benchmark_weights = None
     if effective_start is not None:
         selected_profile = default_profiles()[selected_profile_id]
         profile_by_signal = {
@@ -263,6 +274,31 @@ def run_real_pipeline(
             if signal_date >= effective_start
             and (effective_end is None or signal_date <= effective_end)
         }
+        if portfolio_link and portfolio_link["industry_active_tilt"] > 0.0:
+            if industry_snapshot_path is None or industry_benchmark_path is None:
+                raise ValueError("industry Council decision requires snapshot and benchmark inputs")
+            snapshot = pd.read_parquet(industry_snapshot_path)
+            industries = snapshot.set_index("instrument")["industry_name"].reindex(instruments)
+            benchmark_industry = pd.read_parquet(industry_benchmark_path)
+            benchmark_industry["date"] = pd.to_datetime(benchmark_industry["date"]).dt.normalize()
+            industry_benchmark_weights = (
+                benchmark_industry.pivot(
+                    index="date", columns="industry_name", values="benchmark_weight"
+                )
+                .sort_index()
+                .fillna(0.0)
+            )
+            policy = {
+                "overweights": portfolio_link["industry_overweights"],
+                "underweights": portfolio_link["industry_underweights"],
+                "active_tilt": portfolio_link["industry_active_tilt"],
+            }
+            industry_policy_by_signal = {
+                signal_date: policy
+                for signal_date in forecasts.forecasts
+                if signal_date >= effective_start
+                and (effective_end is None or signal_date <= effective_end)
+            }
     result = PortfolioBacktester().run(
         close=close,
         volume=volume,
@@ -271,6 +307,9 @@ def run_real_pipeline(
         forecasts=forecasts.forecasts,
         default_profile=default_profiles()[default_profile_id],
         profile_by_signal=profile_by_signal,
+        industries=industries,
+        industry_benchmark_weights=industry_benchmark_weights,
+        industry_policy_by_signal=industry_policy_by_signal,
         eligibility=eligibility,
         risk_window=252,
         risk_horizon_days=5,
@@ -312,6 +351,7 @@ def run_real_pipeline(
         "profile_id": default_profile_id,
         "selected_profile_id": selected_profile_id,
         "profile_override_signals": len(profile_by_signal),
+        "industry_override_signals": len(industry_policy_by_signal),
         "horizon_days": horizon_days,
         "training_sessions": training_sessions,
         "rebalance_every": rebalance_every,
@@ -326,6 +366,14 @@ def run_real_pipeline(
                 "path": str(futures_path.resolve()),
                 "sha256": sha256_file(futures_path),
             },
+            "industry_snapshot": (
+                {"path": str(industry_snapshot_path.resolve()), "sha256": sha256_file(industry_snapshot_path)}
+                if industry_snapshot_path is not None else None
+            ),
+            "industry_benchmark": (
+                {"path": str(industry_benchmark_path.resolve()), "sha256": sha256_file(industry_benchmark_path)}
+                if industry_benchmark_path is not None else None
+            ),
         },
         "files": {
             name: hashlib.sha256(content.encode("utf-8")).hexdigest()
@@ -347,6 +395,8 @@ def main() -> None:
     parser.add_argument("--factor-decision", type=Path)
     parser.add_argument("--portfolio-decision", type=Path)
     parser.add_argument("--factor-catalog", type=Path)
+    parser.add_argument("--industry-snapshot", type=Path)
+    parser.add_argument("--industry-benchmark", type=Path)
     parser.add_argument("--horizon-days", type=int, default=20)
     parser.add_argument("--training-sessions", type=int, default=504)
     parser.add_argument("--rebalance-every", type=int, default=5)
@@ -361,6 +411,8 @@ def main() -> None:
         factor_decision_path=args.factor_decision,
         portfolio_decision_path=args.portfolio_decision,
         factor_catalog_path=args.factor_catalog,
+        industry_snapshot_path=args.industry_snapshot,
+        industry_benchmark_path=args.industry_benchmark,
         horizon_days=args.horizon_days,
         training_sessions=args.training_sessions,
         rebalance_every=args.rebalance_every,

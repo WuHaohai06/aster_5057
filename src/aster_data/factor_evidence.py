@@ -12,6 +12,16 @@ from aster_portfolio.factors import compute_price_volume_factors
 from .io import sha256_file, write_json_atomic
 
 
+def _calendar_dates(values: pd.Series) -> pd.Series:
+    """Normalize mixed naive/aware timestamps without changing their local date."""
+
+    return pd.to_datetime(
+        values.astype("string").str.slice(0, 10),
+        format="%Y-%m-%d",
+        errors="raise",
+    ).dt.normalize()
+
+
 def build_market_factors(*, market_path: Path, output_path: Path, as_of: str | None = None) -> dict:
     raw = pd.read_parquet(market_path)
     raw["date"] = pd.to_datetime(raw["date"]).dt.normalize()
@@ -60,8 +70,8 @@ def evaluate_factors(
     maturity = close.index.to_series().shift(-horizon)
     maturity_map = dict(zip(close.index, maturity))
     all_factors = pd.concat([pd.read_parquet(path) for path in factor_paths], ignore_index=True)
-    all_factors["date"] = pd.to_datetime(all_factors["date"]).dt.normalize()
-    all_factors["available_at"] = pd.to_datetime(all_factors["available_at"]).dt.normalize()
+    all_factors["date"] = _calendar_dates(all_factors["date"])
+    all_factors["available_at"] = _calendar_dates(all_factors["available_at"])
     all_factors = all_factors.loc[(all_factors["date"] <= cutoff) & (all_factors["available_at"] <= cutoff)]
     registry_items = []
     diagnostic_items = []

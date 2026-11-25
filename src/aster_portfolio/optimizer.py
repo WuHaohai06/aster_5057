@@ -25,6 +25,11 @@ class PortfolioOptimizationInput:
     futures_beta: float = 1.0
     trade_caps: pd.Series | None = None
     turnover_limit: float | None = None
+    industries: pd.Series | None = None
+    industry_benchmark_weights: pd.Series | None = None
+    industry_overweights: tuple[str, ...] = ()
+    industry_underweights: tuple[str, ...] = ()
+    industry_active_tilt: float = 0.0
 
 
 class PortfolioOptimizer:
@@ -87,6 +92,41 @@ class PortfolioOptimizer:
             profile.futures_margin_rate * h <= 1.0 - cp.sum(w),
             stock_trade <= turnover_limit,
         ]
+        industry_vectors: dict[str, np.ndarray] = {}
+        benchmark_weights = pd.Series(dtype=float)
+        requested_industries = set(data.industry_overweights) | set(data.industry_underweights)
+        if requested_industries and data.industries is None:
+            raise ValueError("industry policy requires an instrument industry mapping")
+        if data.industries is not None:
+            industries = data.industries.reindex(names).fillna("Unknown").astype(str)
+            benchmark_weights = (
+                data.industry_benchmark_weights.astype(float)
+                if data.industry_benchmark_weights is not None
+                else pd.Series(dtype=float)
+            )
+            selected_industries = requested_industries
+            if selected_industries and data.industry_active_tilt <= 0.0:
+                raise ValueError("industry selections require a positive active tilt")
+            if data.industry_active_tilt > 0.10 + 1e-12:
+                raise ValueError("industry_active_tilt exceeds the approved 10% limit")
+            for industry in sorted(selected_industries):
+                vector = industries.eq(industry).to_numpy(dtype=float)
+                if not vector.any():
+                    raise ValueError(f"selected industry has no portfolio instruments: {industry}")
+                industry_vectors[industry] = vector
+                benchmark = float(benchmark_weights.get(industry, 0.0)) * profile.stock_target
+                exposure = vector @ w
+                if industry in data.industry_overweights:
+                    target = benchmark + data.industry_active_tilt
+                    capacity = float(vector.sum()) * profile.name_cap
+                    if target > capacity + 1e-12:
+                        raise ValueError(
+                            f"industry overweight target exceeds name-cap capacity: {industry}"
+                        )
+                    constraints.extend([exposure >= target, exposure <= min(capacity, target + 0.03)])
+                if industry in data.industry_underweights:
+                    target = max(0.0, benchmark - data.industry_active_tilt)
+                    constraints.append(exposure <= target)
         if (~eligible).any():
             # A constituent/tradability change can make an immediate full exit
             # incompatible with the profile's hard turnover limit.  Existing
@@ -128,6 +168,15 @@ class PortfolioOptimizer:
         margin = profile.futures_margin_rate * hedge
         turnover = float(np.abs(weights - previous).sum())
         futures_turnover = abs(hedge - float(data.previous_futures_short))
+        industry_exposures = {
+            industry: float(vector @ weights)
+            for industry, vector in industry_vectors.items()
+        }
+        industry_active_exposures = {
+            industry: exposure
+            - float(benchmark_weights.get(industry, 0.0)) * profile.stock_target
+            for industry, exposure in industry_exposures.items()
+        }
         diagnostics = OptimizationDiagnostics(
             solver_status=str(problem.status),
             objective_value=float(problem.value),
@@ -141,6 +190,8 @@ class PortfolioOptimizer:
             estimated_stock_cost=profile.stock_trade_cost * turnover,
             estimated_futures_cost=profile.futures_trade_cost * futures_turnover,
             max_name_weight=float(weights.max(initial=0.0)),
+            industry_exposures=industry_exposures,
+            industry_active_exposures=industry_active_exposures,
             constraint_slack={
                 "gross": profile.max_gross - gross,
                 "beta_lower": estimated_beta - (profile.target_beta - profile.beta_tolerance),

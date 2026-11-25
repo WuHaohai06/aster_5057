@@ -132,6 +132,37 @@ class PortfolioInfrastructureTest(unittest.TestCase):
         self.assertGreaterEqual(diagnostics.cash_weight, profile.cash_buffer - 1e-6)
         self.assertGreaterEqual(diagnostics.cash_weight, diagnostics.margin_required - 1e-6)
 
+    def test_optimizer_enforces_aggressive_industry_rotation(self) -> None:
+        names = [f"SH{600000 + i:06d}" for i in range(40)]
+        profile = default_profiles()["balanced"]
+        industries = pd.Series(
+            ["Industry A"] * 20 + ["Industry B"] * 20,
+            index=names,
+        )
+        result = PortfolioOptimizer().solve(
+            PortfolioOptimizationInput(
+                signal_date=date(2024, 5, 17),
+                expected_returns=pd.Series(0.0, index=names),
+                covariance=pd.DataFrame(np.eye(len(names)) * 0.002, index=names, columns=names),
+                betas=pd.Series(1.0, index=names),
+                previous_weights=pd.Series(0.0, index=names),
+                previous_futures_short=0.0,
+                eligible=pd.Series(True, index=names),
+                profile=profile,
+                turnover_limit=profile.stock_target,
+                industries=industries,
+                industry_benchmark_weights=pd.Series(
+                    {"Industry A": 0.5, "Industry B": 0.5}
+                ),
+                industry_overweights=("Industry A",),
+                industry_underweights=("Industry B",),
+                industry_active_tilt=0.10,
+            )
+        )
+        active = result.diagnostics.industry_active_exposures
+        self.assertGreaterEqual(active["Industry A"], 0.10 - 1e-6)
+        self.assertLessEqual(active["Industry B"], -0.10 + 1e-6)
+
     def test_ineligible_legacy_positions_are_sell_only_under_turnover_limit(self) -> None:
         names = [f"SH{600000 + i:06d}" for i in range(30)]
         profile = default_profiles()["balanced"]

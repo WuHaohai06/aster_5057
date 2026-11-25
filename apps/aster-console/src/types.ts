@@ -116,6 +116,16 @@ export interface Snapshot {
       id: string;
       label: string;
       metrics: Record<string, number>;
+      council: {
+        selectedProfile: string | null;
+        overweights: string[];
+        underweights: string[];
+        activeTilt: number;
+        effectiveStart: string | null;
+        effectiveEnd: string | null;
+        usesHindsight: boolean;
+        industryOverrideSignals: number;
+      };
       curve: Array<{
         date: string;
         nav: number;

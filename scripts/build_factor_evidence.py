@@ -19,7 +19,16 @@ def main() -> None:
     parser.add_argument("--as-of", required=True)
     parser.add_argument("--horizon", type=int, default=20)
     parser.add_argument("--skip-market-factors", action="store_true")
+    parser.add_argument("--market-only", action="store_true")
     args = parser.parse_args()
+    if args.market_only:
+        market = build_market_context(
+            market_path=args.market,
+            as_of=args.as_of,
+            output_path=args.output_root / "market_state.json",
+        )
+        print(json.dumps({"market_as_of": market["as_of_close"]}, ensure_ascii=False, indent=2))
+        return
     factor_paths = list(args.factor)
     if not args.skip_market_factors:
         baseline_path = args.output_root / "market_factors.parquet"

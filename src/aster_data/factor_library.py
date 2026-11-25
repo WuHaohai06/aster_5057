@@ -696,20 +696,29 @@ def evaluate_quantaalpha_candidates(
     horizon: int = 20,
     min_coverage: float = 0.75,
     min_observations: int = 24,
+    origins: tuple[str, ...] | None = ("quantaalpha",),
 ) -> dict[str, Any]:
-    """Run canonical Aster diagnostics and promote ready QuantaAlpha candidates.
+    """Run canonical Aster diagnostics and promote ready factor candidates.
 
     QuantaAlpha's own feedback remains provenance only. Research eligibility is
     based on the same deterministic coverage and matured-label readiness gates
     used by the Factor Council; predictive strength is still judged by Council.
+
+    ``origins=None`` evaluates the complete catalog.  The default preserves the
+    original QuantaAlpha-only behaviour used by the production refresh job.
     """
 
     project_root = project_root.resolve()
     catalog_path = catalog_path.resolve()
     catalog = load_catalog(catalog_path)
-    candidates = [factor for factor in catalog.factors if factor.origin == "quantaalpha"]
+    candidates = [
+        factor
+        for factor in catalog.factors
+        if origins is None or factor.origin in origins
+    ]
     if not candidates:
-        raise ValueError("catalog contains no QuantaAlpha factors")
+        raise ValueError("catalog contains no factors for the requested origins")
+    candidate_ids = {factor.factor_id for factor in candidates}
     factor_paths = sorted(
         {(project_root / factor.artifact.path).resolve() for factor in candidates}
     )
@@ -725,7 +734,7 @@ def evaluate_quantaalpha_candidates(
     promoted: list[str] = []
     excluded: dict[str, str] = {}
     for factor in catalog.factors:
-        if factor.origin != "quantaalpha":
+        if factor.factor_id not in candidate_ids:
             updated.append(factor)
             continue
         diagnostic = by_id.get(factor.factor_id)
@@ -791,7 +800,11 @@ def evaluate_quantaalpha_candidates(
                 "from_status": LifecycleStatus.CANDIDATE.value,
                 "to_status": LifecycleStatus.VALIDATED.value,
                 "reason": "Canonical Aster diagnostics passed research readiness gates",
-                "actor": "canonical-quanta-evaluator",
+                "actor": (
+                    "canonical-quanta-evaluator"
+                    if origins == ("quantaalpha",)
+                    else "canonical-factor-evaluator"
+                ),
                 "changed_at": changed_at,
                 "catalog_digest": new_catalog.catalog_digest,
             }
@@ -813,7 +826,8 @@ def evaluate_quantaalpha_candidates(
 
 
 def export_council_inputs(
-    *, catalog_path: Path, output_root: Path, mode: str = "research"
+    *, catalog_path: Path, output_root: Path, mode: str = "research",
+    groups: set[str] | None = None,
 ) -> dict[str, Any]:
     if mode not in {"research", "showcase"}:
         raise ValueError("mode must be research or showcase")
@@ -823,6 +837,7 @@ def export_council_inputs(
         for factor in catalog.factors
         if factor.lifecycle_status != LifecycleStatus.RETIRED
         and (factor.research_eligible if mode == "research" else factor.demo_eligible)
+        and (groups is None or factor.factor_group in groups)
     ]
     registry = {
         "version": f"{catalog.schema_version}:{catalog.catalog_digest[:12]}:{mode}",

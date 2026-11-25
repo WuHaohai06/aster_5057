@@ -4,7 +4,9 @@ param(
     [string]$OutputRoot = "",
     [string]$FactorDecision = "",
     [string]$PortfolioDecision = "",
-    [string]$FactorCatalog = ""
+    [string]$FactorCatalog = "",
+    [string]$IndustrySnapshot = "",
+    [string]$IndustryBenchmark = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -34,6 +36,20 @@ if ([string]::IsNullOrWhiteSpace($FactorCatalog)) {
 }
 if (-not [string]::IsNullOrWhiteSpace($FactorCatalog)) {
     $Arguments += @("--factor-catalog", (Resolve-Path $FactorCatalog).Path)
+}
+$DefaultIndustrySnapshot = Join-Path $ProjectRoot "data\curated\industry_snapshot\latest.parquet"
+$DefaultIndustryBenchmark = Join-Path $ProjectRoot "data\curated\industry_snapshot\benchmark_weights.parquet"
+if ([string]::IsNullOrWhiteSpace($IndustrySnapshot) -and (Test-Path -LiteralPath $DefaultIndustrySnapshot)) {
+    $IndustrySnapshot = $DefaultIndustrySnapshot
+}
+if ([string]::IsNullOrWhiteSpace($IndustryBenchmark) -and (Test-Path -LiteralPath $DefaultIndustryBenchmark)) {
+    $IndustryBenchmark = $DefaultIndustryBenchmark
+}
+if (-not [string]::IsNullOrWhiteSpace($IndustrySnapshot)) {
+    $Arguments += @("--industry-snapshot", (Resolve-Path $IndustrySnapshot).Path)
+}
+if (-not [string]::IsNullOrWhiteSpace($IndustryBenchmark)) {
+    $Arguments += @("--industry-benchmark", (Resolve-Path $IndustryBenchmark).Path)
 }
 $PreviousPythonPath = $env:PYTHONPATH
 $PreviousOmpThreads = $env:OMP_NUM_THREADS
