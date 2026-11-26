@@ -33,27 +33,29 @@ class FactorLibraryTest(unittest.TestCase):
         self.assertEqual(_quanta_metric(metrics, "rank_ic", "rank ic"), 0.03)
         self.assertEqual(_quanta_metric(metrics, "rank_ic_ir", "rank icir"), 0.2)
 
-    def test_quanta_rebuild_preserves_canonical_diagnostics_for_same_values(self) -> None:
+    def test_rebuild_preserves_evaluated_diagnostics_for_same_values(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             output = self._library(root)
             base = load_catalog(output / "catalog.json").factors[0]
-            previous = base.model_copy(
-                update={
-                    "origin": "quantaalpha",
-                    "lifecycle_status": LifecycleStatus.VALIDATED,
-                    "research_eligible": True,
-                    "diagnostics": {"rank_ic_mean": 0.02, "ic": 0.01},
-                }
-            )
-            refreshed = base.model_copy(
-                update={"origin": "quantaalpha", "diagnostics": {"ic": 0.03}}
-            )
-            merged = _merge_previous_record(refreshed, previous)
-            self.assertEqual(merged.lifecycle_status, LifecycleStatus.VALIDATED)
-            self.assertTrue(merged.research_eligible)
-            self.assertEqual(merged.diagnostics["rank_ic_mean"], 0.02)
-            self.assertEqual(merged.diagnostics["ic"], 0.03)
+            for origin in ("quantaalpha", "filing_text_llm"):
+                with self.subTest(origin=origin):
+                    previous = base.model_copy(
+                        update={
+                            "origin": origin,
+                            "lifecycle_status": LifecycleStatus.VALIDATED,
+                            "research_eligible": True,
+                            "diagnostics": {"rank_ic_mean": 0.02, "ic": 0.01},
+                        }
+                    )
+                    refreshed = base.model_copy(
+                        update={"origin": origin, "diagnostics": {"ic": 0.03}}
+                    )
+                    merged = _merge_previous_record(refreshed, previous)
+                    self.assertEqual(merged.lifecycle_status, LifecycleStatus.VALIDATED)
+                    self.assertTrue(merged.research_eligible)
+                    self.assertEqual(merged.diagnostics["rank_ic_mean"], 0.02)
+                    self.assertEqual(merged.diagnostics["ic"], 0.03)
 
     def _library(self, root: Path) -> Path:
         values = root / "data" / "factor.parquet"

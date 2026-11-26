@@ -420,6 +420,9 @@ function App() {
         const result = await loadSnapshot();
         if (disposed) return;
         setSnapshot(result.snapshot);
+        if (initial) {
+          setMode(result.snapshot.meta.mode === "showcase_reenactment" ? "showcase" : "research");
+        }
         setConnection(result.source === "live" ? "live" : "snapshot");
         setLastSync(new Date());
         setError("");

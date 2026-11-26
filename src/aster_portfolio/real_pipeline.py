@@ -141,9 +141,17 @@ def _resolve_factor_features(
             values["available_at"] = pd.to_datetime(values["available_at"]).dt.normalize()
             if (values["available_at"] > values["date"]).any():
                 raise ValueError(f"factor {record.factor_id} violates available_at <= date")
+            signal_timestamp = values[["date", "available_at"]].max(axis=1)
+            positions = dates.searchsorted(pd.DatetimeIndex(signal_timestamp), side="left")
+            valid_positions = positions < len(dates)
+            values = values.loc[valid_positions].copy()
+            values["signal_date"] = dates.take(positions[valid_positions])
             panel = (
-                values.pivot(index="date", columns="instrument", values="value")
+                values.pivot_table(
+                    index="signal_date", columns="instrument", values="value", aggfunc="last"
+                )
                 .reindex(index=dates, columns=instruments)
+                .ffill()
             )
             features[record.factor_id] = panel
             external_ids.append(record.factor_id)

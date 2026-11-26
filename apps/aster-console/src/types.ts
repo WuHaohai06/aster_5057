@@ -101,6 +101,9 @@ export interface Snapshot {
       promptVersion: string;
       dissent: string[];
       isHistorical: boolean;
+      mode: string;
+      usesHindsight: boolean;
+      disclosure: string | null;
     };
     ballots: Array<{
       role: string;

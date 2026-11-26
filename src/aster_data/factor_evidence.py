@@ -84,6 +84,14 @@ def evaluate_factors(
         .fillna(0).astype(bool)
     )
     for factor_id, group in all_factors.groupby("factor_id", sort=True):
+        group = group.copy()
+        signal_timestamp = group[["date", "available_at"]].max(axis=1)
+        positions = close.index.searchsorted(pd.DatetimeIndex(signal_timestamp), side="left")
+        valid_positions = positions < len(close.index)
+        group = group.loc[valid_positions].copy()
+        if group.empty:
+            continue
+        group["signal_date"] = close.index.take(positions[valid_positions])
         factor_group = str(group["factor_group"].iloc[0])
         origin = str(group["origin"].iloc[0])
         registry_items.append({
@@ -95,7 +103,9 @@ def evaluate_factors(
         # the trading calendar makes the last publicly available report usable
         # until the next disclosure, without moving it before available_at.
         value_panel = (
-            group.pivot_table(index="date", columns="instrument", values="value", aggfunc="last")
+            group.pivot_table(
+                index="signal_date", columns="instrument", values="value", aggfunc="last"
+            )
             .reindex(index=close.index, columns=close.columns)
             .ffill()
         )
@@ -112,7 +122,14 @@ def evaluate_factors(
         ranks = value_panel.rank(axis=1, pct=True)
         turnover = ranks.diff().abs().mean(axis=1).mean()
         observed = factor_long[["date", "instrument"]].drop_duplicates()
-        coverage = len(expected.merge(observed, on=["date", "instrument"])) / max(1, len(expected))
+        # Event-driven factors cannot exist before their first public event.
+        # Measure coverage from the factor's first observable date while still
+        # counting every PIT-eligible issuer in that subsequent window.
+        first_observed_date = pd.Timestamp(group["signal_date"].min()).normalize()
+        expected_window = expected.loc[expected["date"] >= first_observed_date]
+        coverage = len(expected_window.merge(observed, on=["date", "instrument"])) / max(
+            1, len(expected_window)
+        )
         yearly = daily_ic.groupby(daily_ic.index.year).mean().to_dict() if len(daily_ic) else {}
         latest_label = mature["maturity"].max() if not mature.empty else cutoff
         std = float(daily_ic.std(ddof=1)) if len(daily_ic) > 1 else 0.0

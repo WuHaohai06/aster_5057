@@ -84,3 +84,20 @@ conda run -n aster_5057_quantaalpha python -m aster_council run `
   therefore historical raw outputs and final decisions are retained.
 - V2 consumes prepared diagnostics and structured mechanism claims. Producing
   diagnostics from factor values remains deterministic code.
+
+## Filing AI showcase chain
+
+The filing chain imports five annual-report scores as separate Council groups:
+`filing_demand_strength`, `filing_management_outlook`, `filing_uncertainty`,
+`filing_investment_intensity`, and `filing_margin_pressure`. Event timestamps
+are mapped to the first trading day on or after public availability; the latest
+public score is then held until the next filing.
+
+The normal policy remains `min_factor_coverage=0.75`. The six-year filing
+scores currently cover only about 42.6%–42.8% of eligible member-days, so they
+remain research-ineligible candidates. The course-demo configuration
+`config/council/filing_ai_showcase_policy.json` uses a disclosed 0.29 historical
+coverage gate for the 2021-12-31 packet. Its companion directive explicitly
+selects the five filing groups with low-volatility and QuantaAlpha A01/A03. This
+is a retrospective showcase reenactment and does not promote those factors in
+the research catalog.

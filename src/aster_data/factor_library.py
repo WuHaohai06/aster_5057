@@ -352,6 +352,115 @@ def _text_records(*, project_root: Path, path: Path, manifest_path: Path) -> lis
     return records
 
 
+FILING_AI_DEFINITIONS = {
+    "filing_demand_strength": {
+        "display_name": "AI Filing Demand Strength",
+        "description": "LLM assessment of demand momentum disclosed in the annual report.",
+        "hypothesis": "Stronger disclosed customer demand and order momentum predict stronger subsequent returns.",
+        "mechanism": "Management discussion can reveal order, utilization and customer-demand changes before they are fully reflected in consensus expectations.",
+        "direction": "positive cross-sectional Rank IC",
+    },
+    "filing_management_outlook": {
+        "display_name": "AI Filing Management Outlook",
+        "description": "LLM assessment of forward-looking management confidence and operating outlook.",
+        "hypothesis": "A more constructive and specific management outlook predicts stronger subsequent returns.",
+        "mechanism": "Specific forward guidance can contain incremental information about planned production, demand and execution confidence.",
+        "direction": "positive cross-sectional Rank IC",
+    },
+    "filing_uncertainty": {
+        "display_name": "AI Filing Uncertainty",
+        "description": "LLM assessment of operational, financial and strategic uncertainty in the annual report.",
+        "hypothesis": "Higher disclosed uncertainty predicts weaker subsequent returns and greater downside risk.",
+        "mechanism": "Uncertainty language proxies for unresolved operating constraints and a wider distribution of future cash flows.",
+        "direction": "negative cross-sectional Rank IC",
+    },
+    "filing_investment_intensity": {
+        "display_name": "AI Filing Investment Intensity",
+        "description": "LLM assessment of capital expenditure and capacity-expansion intensity.",
+        "hypothesis": "Investment intensity has a state-dependent relation with returns and should be judged against demand confirmation.",
+        "mechanism": "Capacity investment may signal growth options when demand is strong, but overinvestment when demand and margins are weak.",
+        "direction": "factor-specific; Council must assess the demand-conditioned mechanism",
+    },
+    "filing_margin_pressure": {
+        "display_name": "AI Filing Margin Pressure",
+        "description": "LLM assessment of cost inflation, pricing pressure and margin compression.",
+        "hypothesis": "Greater disclosed margin pressure predicts weaker subsequent returns.",
+        "mechanism": "Cost pressure and weak pricing power can lead to negative earnings revisions after the filing is published.",
+        "direction": "negative cross-sectional Rank IC",
+    },
+}
+
+
+def _filing_ai_records(
+    *, project_root: Path, output_root: Path, source_paths: list[Path]
+) -> list[FactorRecord]:
+    if not source_paths:
+        return []
+    frames = [pd.read_parquet(path) for path in source_paths]
+    frame = pd.concat(frames, ignore_index=True)
+    missing = set(FACTOR_COLUMNS).difference(frame.columns)
+    if missing:
+        raise ValueError(f"AI filing factors are missing canonical columns: {sorted(missing)}")
+    for column in ("date", "available_at"):
+        frame[column] = pd.to_datetime(
+            frame[column].astype("string").str.slice(0, 10),
+            format="%Y-%m-%d",
+            errors="raise",
+        ).dt.normalize()
+    frame["instrument"] = frame["instrument"].map(instrument_from_code)
+    frame["value"] = pd.to_numeric(frame["value"], errors="coerce")
+    frame = frame.loc[frame["factor_id"].isin(FILING_AI_DEFINITIONS)].copy()
+    frame["factor_group"] = frame["factor_id"]
+    frame["origin"] = "filing_text_llm"
+    frame = frame.dropna(subset=["date", "available_at", "instrument", "value"])
+    if (frame["available_at"] > frame["date"]).any():
+        raise ValueError("AI filing factor available_at cannot be after its signal date")
+    frame = frame[FACTOR_COLUMNS].sort_values(
+        ["date", "instrument", "factor_id", "source_id"]
+    )
+    frame = frame.drop_duplicates(["date", "instrument", "factor_id"], keep="last")
+    output = output_root / "values" / "filing_ai" / "v1.parquet"
+    _write_parquet_atomic(frame, output)
+    records = []
+    for factor_id, definition in FILING_AI_DEFINITIONS.items():
+        records.append(
+            FactorRecord(
+                factor_id=factor_id,
+                display_name=definition["display_name"],
+                factor_group=factor_id,
+                family="filing_ai",
+                origin="filing_text_llm",
+                version="aster-filing-analysis-v1",
+                lifecycle_status=LifecycleStatus.CANDIDATE,
+                status_reason="AI filing factor imported; canonical evaluation is required",
+                expression=f"LLM annual-report score: {factor_id}",
+                description=definition["description"],
+                economic_hypothesis=definition["hypothesis"],
+                mechanism_explanation=definition["mechanism"],
+                expected_direction=definition["direction"],
+                falsification_criteria=[
+                    "No stable matured Rank IC after the public filing date",
+                    "The effect disappears after controlling for price-volume and industry exposures",
+                ],
+                mechanism_source="src/aster_data/filing_factor_batch.py",
+                implementation_ref="data/curated/factors/filing_analysis/*/filing_factors_*.parquet",
+                pit_compliant=True,
+                research_eligible=False,
+                demo_eligible=True,
+                artifact=_frame_artifact(
+                    path=output,
+                    frame=frame,
+                    factor_id=factor_id,
+                    project_root=project_root,
+                    shared=True,
+                ),
+                diagnostics={"source_years": [path.parent.name for path in source_paths]},
+                tags=["filing_ai", "annual_report", "llm_scored", "real_data"],
+            )
+        )
+    return records
+
+
 def _quanta_records(
     *, project_root: Path, output_root: Path, library_path: Path
 ) -> list[FactorRecord]:
@@ -482,7 +591,7 @@ def _write_catalog(catalog: FactorCatalog, output_root: Path) -> None:
 
 
 def _merge_previous_record(record: FactorRecord, previous: FactorRecord) -> FactorRecord:
-    """Keep governance state without carrying stale QuantaAlpha evidence forward."""
+    """Keep governance state without carrying stale evaluated evidence forward."""
 
     update: dict[str, Any] = {
         "lifecycle_status": previous.lifecycle_status,
@@ -490,17 +599,17 @@ def _merge_previous_record(record: FactorRecord, previous: FactorRecord) -> Fact
         "research_eligible": previous.research_eligible,
         "demo_eligible": previous.demo_eligible,
     }
-    if record.origin == "quantaalpha":
+    if record.origin in {"quantaalpha", "filing_text_llm"}:
         if record.artifact.sha256 == previous.artifact.sha256:
-            # Preserve canonical Aster diagnostics while refreshing metrics copied
-            # from the latest QuantaAlpha library JSON.
+            # Preserve canonical Aster diagnostics while refreshing source-level
+            # provenance generated by the relevant importer.
             update["diagnostics"] = {**previous.diagnostics, **record.diagnostics}
         else:
             update.update(
                 {
                     "lifecycle_status": LifecycleStatus.CANDIDATE,
                     "status_reason": (
-                        "QuantaAlpha values changed; canonical diagnostics must be rerun"
+                        "Factor values changed; canonical diagnostics must be rerun"
                     ),
                     "research_eligible": False,
                 }
@@ -519,6 +628,11 @@ def build_factor_library(
     financial_path = project_root / "data/curated/factors/financial_factors.parquet"
     text_path = project_root / "data/curated/factors/filing_text/filing_text_factors_deterministic.parquet"
     text_manifest = project_root / "data/curated/factors/filing_text/filing_text_manifest_deterministic.json"
+    filing_ai_paths = sorted(
+        (project_root / "data/curated/factors/filing_analysis").glob(
+            "*/filing_factors_*.parquet"
+        )
+    )
     required = (registry_path, diagnostics_path, market_path, financial_path)
     missing = [str(path) for path in required if not path.exists()]
     if missing:
@@ -553,6 +667,13 @@ def build_factor_library(
         )
     records.extend(
         _text_records(project_root=project_root, path=text_path, manifest_path=text_manifest)
+    )
+    records.extend(
+        _filing_ai_records(
+            project_root=project_root,
+            output_root=output_root,
+            source_paths=filing_ai_paths,
+        )
     )
     quanta_by_id: dict[str, FactorRecord] = {}
     for library_path in quanta_library_paths:
@@ -697,6 +818,7 @@ def evaluate_quantaalpha_candidates(
     min_coverage: float = 0.75,
     min_observations: int = 24,
     origins: tuple[str, ...] | None = ("quantaalpha",),
+    groups: set[str] | None = None,
 ) -> dict[str, Any]:
     """Run canonical Aster diagnostics and promote ready factor candidates.
 
@@ -715,6 +837,7 @@ def evaluate_quantaalpha_candidates(
         factor
         for factor in catalog.factors
         if origins is None or factor.origin in origins
+        if groups is None or factor.factor_group in groups
     ]
     if not candidates:
         raise ValueError("catalog contains no factors for the requested origins")

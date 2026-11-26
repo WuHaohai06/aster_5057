@@ -72,4 +72,5 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run_real_pipeline.ps1 `
 - 周度 Baostock 成分是候选 PIT 股票池，仍需正式 CSI 调整公告覆盖；
 - AKShare/东方财富会限流，全量任务必须低频、断点续跑；
 - 当前统一市场层尚未加入涨跌停、ST、停牌成交恢复、上市天数和 ADV 容量模型；
-- QuantaAlpha 结果进入正式因子注册表、财报解析和正式 Factor Council 证据生产属于下一阶段。
+- QuantaAlpha 和财报 AI 结果已经进入统一因子注册表、Factor Council 与回测；当前主要边界是财报因子覆盖率仍低于正式研究门槛。
+- 行业分类使用当前快照用于课程演示，不冒充历史 PIT 行业分类。

@@ -45,10 +45,13 @@ def public_job(name: str, path: Path) -> dict[str, Any]:
         }
     if result.get("state") == "complete" and result.get("documents_scored") is not None:
         result.setdefault("score_completed", result["documents_scored"])
-        result.setdefault("score_total", result["documents_scored"])
-        result.setdefault("parse_completed", result.get("documents_total", 0))
+        result.setdefault("score_total", result.get("documents_total", result["documents_scored"]))
+        result.setdefault(
+            "parse_completed",
+            max(0, int(result.get("documents_total", 0)) - int(result.get("failures", 0))),
+        )
         result.setdefault("parse_failures", result.get("failures", 0))
-        result.setdefault("score_failures", 0)
+        result.setdefault("score_failures", result.get("failures", 0))
     return {"name": name, **result}
 
 
@@ -239,10 +242,25 @@ def factor_rows(catalog: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def council_snapshot() -> dict[str, Any]:
-    packet_path = PROJECT_ROOT / "run/factor_library_validation/research_packet_v2.json"
+    roots = [
+        PROJECT_ROOT / "data/council/real_runs",
+        PROJECT_ROOT / "data/council/showcase_runs",
+        PROJECT_ROOT / "data/council/filing_ai_showcase_runs",
+    ]
+    candidates = [
+        path
+        for root in roots if root.exists()
+        for path in root.glob("*")
+        if path.is_dir() and (path / "decision.json").exists()
+    ]
+    run_dir = max(
+        candidates,
+        key=lambda path: (path / "decision.json").stat().st_mtime,
+        default=None,
+    )
+    fallback_packet = PROJECT_ROOT / "run/factor_library_validation/research_packet_v2.json"
+    packet_path = run_dir / "packet.json" if run_dir and (run_dir / "packet.json").exists() else fallback_packet
     packet = load_json(packet_path, {}) or {}
-    runs_root = PROJECT_ROOT / "data/council/real_runs"
-    run_dir = latest_directory(runs_root)
     decision = load_json(run_dir / "decision.json", {}) if run_dir else {}
     ballots = []
     if run_dir and (run_dir / "ballots").exists():
@@ -295,6 +313,9 @@ def council_snapshot() -> dict[str, Any]:
             "promptVersion": decision.get("prompt_version"),
             "dissent": decision.get("dissent", []),
             "isHistorical": True,
+            "mode": decision.get("mode", "research"),
+            "usesHindsight": bool(decision.get("uses_hindsight", False)),
+            "disclosure": decision.get("disclosure"),
         },
         "ballots": ballots,
         "mechanismReviewPending": not any(item.get("mechanismReviews") for item in ballots),
@@ -382,9 +403,15 @@ def build_snapshot() -> dict[str, Any]:
     data_detail = "CSI500 PIT + OHLCV"
     if factor_inputs.get("total_artifacts"):
         data_detail = f"{factor_inputs.get('completed_artifacts', 0)}/{factor_inputs['total_artifacts']} factor inputs"
+    if scored >= score_total:
+        filing_state = "complete"
+    elif filing.get("state") == "complete":
+        filing_state = "attention"
+    else:
+        filing_state = "running"
     pipeline = [
         {"id": "data", "label": "Data spine", "detail": data_detail, "state": "running" if data_running else "complete", "view": "overview"},
-        {"id": "filings", "label": "Filing intelligence", "detail": f"{scored}/{score_total} scored (2020-25)", "state": "running" if scored < score_total else "complete", "view": "filings"},
+        {"id": "filings", "label": "Filing intelligence", "detail": f"{scored}/{score_total} scored (2020-25)", "state": filing_state, "view": "filings"},
         {"id": "mining", "label": "AI factor mining", "detail": f"{mining['completed']}/{mining['total']} directions · {quanta} candidates", "state": mining["state"], "view": "factors"},
         {"id": "evaluation", "label": "Canonical evaluation", "detail": f"{validated}/{len(factors)} validated", "state": "complete" if validated == len(factors) else "attention", "view": "factors"},
         {"id": "council", "label": "Factor Council", "detail": f"{len(council['decision']['selectedGroups'])} groups selected", "state": "attention" if council["decision"]["fallbackUsed"] else "complete", "view": "council"},
@@ -396,8 +423,8 @@ def build_snapshot() -> dict[str, Any]:
             "generatedAt": datetime.now().astimezone().isoformat(),
             "asOf": council["packet"].get("decisionAt") or datetime.now().date().isoformat(),
             "catalogDigest": str(catalog.get("catalog_digest", ""))[:12],
-            "mode": "research",
-            "showcaseDisclosure": "Retrospective course-demo reenactment uses hindsight-selected scenarios and is not a live prediction.",
+            "mode": council["decision"].get("mode", "research"),
+            "showcaseDisclosure": council["decision"].get("disclosure") or "Retrospective course-demo reenactment uses hindsight-selected scenarios and is not a live prediction.",
         },
         "pipeline": pipeline,
         "jobs": jobs,

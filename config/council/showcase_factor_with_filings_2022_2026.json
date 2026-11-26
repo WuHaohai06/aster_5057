@@ -1,0 +1,18 @@
+{
+  "uses_hindsight_for_scenario_selection": true,
+  "narrative_style": "ex_ante_reenactment",
+  "target_selected_groups": [
+    "conventional_low_vol",
+    "quanta_pv_a03",
+    "quanta_pv_a01",
+    "filing_demand_strength",
+    "filing_management_outlook",
+    "filing_uncertainty",
+    "filing_investment_intensity",
+    "filing_margin_pressure"
+  ],
+  "future_window_start": "2022-01-01",
+  "future_window_end": "2026-11-20",
+  "retrospective_outcome_summary": "Hindsight selects the complete five-factor annual-report AI score set together with a low-volatility anchor and two mined price-volume groups, so the course demo visibly exercises filing ingestion, AI factor scoring, Council review and downstream portfolio replay. Filing-factor coverage is below the normal research gate and remains an explicit limitation.",
+  "disclosure": "Retrospective course-demo reenactment: hindsight selected the showcased scenario; the Council narrative is not a live or point-in-time prediction."
+}

@@ -7,7 +7,8 @@ Factor Library 是因子定义、数值、版本、血缘、诊断和生命周�
 - 框架内置价量因子：Python 公式 + 共享 Parquet；
 - QuantaAlpha 因子：JSON 定义 + HDF5 Series；
 - PIT 财务因子：标准长表 Parquet；
-- 财报文本因子：标准长表 Parquet + 文档证据。
+- 财报文本因子：标准长表 Parquet + 文档证据；
+- 财报 AI 因子：六年年报批量评分 + 公告日可用性。
 
 正式 Catalog 位于 `data/curated/factor_library`。
 
@@ -16,11 +17,12 @@ Factor Library 是因子定义、数值、版本、血缘、诊断和生命周�
 | 来源 | 数量 | 默认状态 |
 |---|---:|---|
 | 确定性价量因子 | 6 | `validated`，其中3个已标记 `demo_selected` |
-| QuantaAlpha AI 挖掘 | 3 | `candidate` |
+| QuantaAlpha AI 挖掘 | 26 | 按 canonical evaluation 结果处于 `validated`、`demo_selected` 或 `candidate` |
 | PIT 财务因子 | 2 | `validated`，但暂不满足研究覆盖率门槛 |
 | 财报文本因子 | 3 | `candidate`，当前为两份文档的烟雾数据 |
+| 财报 AI 因子 | 5 | `candidate`；有完整诊断和回测接入，但覆盖率低于研究门槛 |
 
-共14个唯一 `factor_id`。
+共42个唯一 `factor_id`；当前状态统计为31个 `validated`、3个 `demo_selected` 和8个 `candidate`。
 
 ## 标准数值结构
 
@@ -62,6 +64,7 @@ data/curated/factor_library/
 ├── lifecycle_events.json        # 状态变更审计
 ├── definitions/<factor_id>.json # 单因子定义
 ├── values/quantaalpha/...        # 标准化后的 QuantaAlpha 数值
+├── values/filing_ai/v1.parquet   # 五个六年财报 AI 因子
 └── exports/
     ├── research/                 # 严格研究版 Council 输入
     └── showcase/                 # 展示版 Council 输入
@@ -125,10 +128,11 @@ python .\scripts\manage_factor_library.py export-council `
 
 ## 当前门槛结果
 
-- Research 导出：6个价量因子，6个均有完整诊断。
-- Showcase 导出：14个因子；8个已有完整诊断。
-- QuantaAlpha 3个因子已有完整数值，但还缺统一的逐因子覆盖率、成熟 RankIC 和换手诊断。
-- 文本3因子只有两份财报，不满足正式诊断条件。
+- 26个 QuantaAlpha 因子已经统一转换为 canonical Parquet，并可使用同一评估器计算覆盖率、成熟 Rank IC、换手和冗余；
+- 五个财报 AI 因子共21,560行、735只股票，统一映射到公告日之后的首个交易日并向前保持至下一次披露；
+- 五个财报 AI 因子的全期覆盖率约42.6%–42.8%，低于正式研究政策的75%，因此仍为 `candidate` 且 `research_eligible=false`；
+- 2021-12-31 演示截面覆盖率约29.75%–30.23%，有169个成熟日度 IC 观测；独立 showcase 政策允许其进入课程演示，但不会改变主 Catalog 的研究状态；
+- 三个确定性财报文本因子仍是两份文档的 smoke 数据，不满足正式诊断条件。
 
 缺少诊断的候选因子会保留在展示 Registry 中，但不会通过 Factor Council 的确定性证据门槛。
 
@@ -148,4 +152,4 @@ values = load_factor_values(
 
 回测和 Council 应引用 Catalog 的 `catalog_digest`，从而把一次运行固定到明确的因子库版本。
 
-`scripts/run_real_pipeline.ps1` 会自动发现默认 Catalog。内置价量组继续使用同一套确定性实时计算；当 Factor Council 选择 Catalog 中的外部 group（例如 `quanta_shock_reversal`）时，回测器会将该 group 展开为对应的全部因子 ID，读取标准 Parquet，按交易日和股票对齐，并把 Catalog digest 和实际 feature IDs 写入回放 manifest。
+`scripts/run_real_pipeline.ps1` 会自动发现默认 Catalog。内置价量组继续使用同一套确定性实时计算；当 Factor Council 选择外部 group 时，回测器会将该 group 展开为对应的全部因子 ID，读取标准 Parquet，将 `available_at` 映射到下一交易日后再向前填充，并把 Catalog digest 和实际 feature IDs 写入回放 manifest。最新财报 showcase 回放的 manifest 明确记录了全部五个 `filing_*` 特征。

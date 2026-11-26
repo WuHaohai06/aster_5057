@@ -59,6 +59,7 @@ def parser() -> argparse.ArgumentParser:
     quanta.add_argument("--horizon", type=int, default=20)
     quanta.add_argument("--min-coverage", type=float, default=0.75)
     quanta.add_argument("--min-observations", type=int, default=24)
+    quanta.add_argument("--group", action="append", default=[])
     all_factors = commands.add_parser("evaluate-all")
     all_factors.add_argument(
         "--market", type=Path,
@@ -72,6 +73,22 @@ def parser() -> argparse.ArgumentParser:
     all_factors.add_argument("--horizon", type=int, default=20)
     all_factors.add_argument("--min-coverage", type=float, default=0.75)
     all_factors.add_argument("--min-observations", type=int, default=24)
+    all_factors.add_argument("--group", action="append", default=[])
+    origin = commands.add_parser("evaluate-origin")
+    origin.add_argument("--origin", action="append", required=True)
+    origin.add_argument(
+        "--market", type=Path,
+        default=PROJECT_ROOT / "data/curated/market/daily.parquet",
+    )
+    origin.add_argument(
+        "--evidence-root", type=Path,
+        default=PROJECT_ROOT / "data/council/factor_evidence",
+    )
+    origin.add_argument("--as-of", required=True)
+    origin.add_argument("--horizon", type=int, default=20)
+    origin.add_argument("--min-coverage", type=float, default=0.75)
+    origin.add_argument("--min-observations", type=int, default=24)
+    origin.add_argument("--group", action="append", default=[])
     return root
 
 
@@ -122,7 +139,14 @@ def main() -> None:
             mode=args.mode,
             groups=set(args.group) if args.group else None,
         )
-    elif args.command in {"evaluate-quanta", "evaluate-all"}:
+    elif args.command in {"evaluate-quanta", "evaluate-all", "evaluate-origin"}:
+        origins = (
+            None
+            if args.command == "evaluate-all"
+            else tuple(args.origin)
+            if args.command == "evaluate-origin"
+            else ("quantaalpha",)
+        )
         payload = evaluate_quantaalpha_candidates(
             project_root=PROJECT_ROOT,
             catalog_path=output_root / "catalog.json",
@@ -132,7 +156,8 @@ def main() -> None:
             horizon=args.horizon,
             min_coverage=args.min_coverage,
             min_observations=args.min_observations,
-            origins=None if args.command == "evaluate-all" else ("quantaalpha",),
+            origins=origins,
+            groups=set(args.group) if args.group else None,
         )
     else:
         catalog = load_catalog(output_root / "catalog.json")

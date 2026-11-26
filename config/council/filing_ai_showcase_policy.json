@@ -1,0 +1,16 @@
+{
+  "constraints": {
+    "min_groups": 2,
+    "max_groups": 8,
+    "min_factor_coverage": 0.29,
+    "min_ic_observations": 24,
+    "required_at_least_one_from": [
+      "conventional_reversal",
+      "conventional_low_vol"
+    ],
+    "fallback_groups": [
+      "conventional_reversal",
+      "conventional_low_vol"
+    ]
+  }
+}
