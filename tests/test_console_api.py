@@ -13,7 +13,7 @@ from aster_console.api import app, build_snapshot, snapshot_digest  # noqa: E402
 
 
 class ConsoleApiTest(unittest.TestCase):
-    def test_read_only_routes_and_stable_digest(self) -> None:
+    def test_snapshot_and_interactive_replay_routes(self) -> None:
         routes = {
             (method, route.path)
             for route in app.routes
@@ -22,7 +22,10 @@ class ConsoleApiTest(unittest.TestCase):
         self.assertIn(("GET", "/api/health"), routes)
         self.assertIn(("GET", "/api/snapshot"), routes)
         self.assertIn(("GET", "/api/events"), routes)
-        self.assertFalse(any(method in {"POST", "PUT", "PATCH", "DELETE"} for method, _ in routes))
+        self.assertIn(("POST", "/api/replay/sessions"), routes)
+        self.assertIn(("POST", "/api/replay/{session_id}/nodes/{node_id}/rethink"), routes)
+        self.assertIn(("POST", "/api/replay/{session_id}/nodes/{node_id}/accept"), routes)
+        self.assertIn(("POST", "/api/replay/{session_id}/nodes/{node_id}/run"), routes)
 
         snapshot = build_snapshot()
         later = copy.deepcopy(snapshot)

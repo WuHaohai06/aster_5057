@@ -59,6 +59,8 @@ def chair_system(mode: CouncilMode) -> str:
         mandate = (
             "Choose a valid group mask under every constraint. Ballots are advice, not a "
             "simple majority. Explicitly synthesize the mechanism reviews and prefer the "
-            "fixed fallback when a selected group has an unsupported or non-PIT mechanism."
+            "fixed fallback when a selected group has an unsupported or non-PIT mechanism. "
+            "use_fallback=true is only valid when selected_groups is exactly the declared "
+            "fallback_groups; if you add any other group, set use_fallback=false."
         )
     return f"{rules}\n\nYou are the chair. {mandate} Explicitly list every unselected candidate."

@@ -1,9 +1,9 @@
 {
   "meta": {
     "schema": "aster-console-snapshot-v2",
-    "generatedAt": "2026-11-26T20:45:47.769342+08:00",
+    "generatedAt": "2026-11-26T21:07:51.941335+08:00",
     "asOf": "2021-12-31",
-    "catalogDigest": "70169a60ca8b",
+    "catalogDigest": "d303995af4e9",
     "mode": "showcase_reenactment",
     "showcaseDisclosure": "Retrospective course-demo reenactment: hindsight selected the showcased scenario; the Council narrative is not a live or point-in-time prediction."
   },
@@ -25,14 +25,14 @@
     {
       "id": "mining",
       "label": "AI factor mining",
-      "detail": "8/8 directions · 26 candidates",
-      "state": "complete",
+      "detail": "8/16 directions · 26 candidates",
+      "state": "running",
       "view": "factors"
     },
     {
       "id": "evaluation",
       "label": "Canonical evaluation",
-      "detail": "34/42 validated",
+      "detail": "46/54 validated",
       "state": "attention",
       "view": "factors"
     },
@@ -250,9 +250,9 @@
     },
     {
       "name": "QuantaAlpha price-volume mining",
-      "state": "complete",
+      "state": "running",
       "completed": 8,
-      "total": 8,
+      "total": 16,
       "factor_count": 23,
       "factor_ids": [
         "A01",
@@ -1426,6 +1426,177 @@
       }
     },
     {
+      "id": "beta_downside_asymmetry",
+      "name": "Downside Beta Asymmetry",
+      "group": "style_beta",
+      "family": "beta",
+      "origin": "aster_style_factors",
+      "status": "validated",
+      "researchEligible": true,
+      "demoEligible": true,
+      "pitCompliant": true,
+      "expression": "-(beta_down_120 - beta_up_120)",
+      "description": "Difference between down-market and up-market beta.",
+      "hypothesis": "Stocks with disproportionate downside beta subsequently underperform otherwise similar stocks.",
+      "mechanism": "Down-market covariance captures funding and forced-selling exposure hidden by unconditional beta.",
+      "expectedDirection": "higher means less downside-beta asymmetry",
+      "falsificationCriteria": [
+        "No stable matured Rank IC across multiple calendar years",
+        "The effect disappears after controlling for correlated style groups",
+        "Implementation costs or sparse history dominate the apparent signal"
+      ],
+      "mechanismSource": "config/quantaalpha/hypothesis_seed_library.yaml",
+      "tags": [
+        "beta",
+        "style",
+        "deterministic",
+        "real_data"
+      ],
+      "version": "aster-style-factors-v1",
+      "statusReason": "Canonical Aster diagnostics passed research readiness gates; predictive merit remains subject to Factor Council review",
+      "metrics": {
+        "rankIc": 0.0011602258704879942,
+        "rankIcIr": 0.008369240165880908,
+        "coverage": 0.9988280286971916,
+        "turnover": 0.011389211931804337,
+        "correlation": 0.08840531021186378,
+        "observations": 2352
+      },
+      "yearlyRankIc": {
+        "2017": 0.07260329898239407,
+        "2018": -0.01410341147869867,
+        "2019": 0.02788111591911697,
+        "2020": -0.023463922522854876,
+        "2021": 0.03637098255543262,
+        "2022": 0.015619235034705246,
+        "2023": -0.0260808875317907,
+        "2024": -0.006237431645781751,
+        "2025": -0.012850407414659266,
+        "2026": -0.06504354861433137
+      },
+      "artifact": {
+        "rows": 161816,
+        "instruments": 811,
+        "firstDate": "2017-02-10",
+        "lastDate": "2026-11-20",
+        "digest": "4c41261bb1c9"
+      }
+    },
+    {
+      "id": "beta_instability",
+      "name": "Beta Stability",
+      "group": "style_beta",
+      "family": "beta",
+      "origin": "aster_style_factors",
+      "status": "validated",
+      "researchEligible": true,
+      "demoEligible": true,
+      "pitCompliant": true,
+      "expression": "-(abs(beta_60-beta_252)+std(beta_60,120))",
+      "description": "Penalty for disagreement and instability in rolling beta.",
+      "hypothesis": "Unstable systematic exposure predicts weaker subsequent performance.",
+      "mechanism": "Changing beta can proxy for business-model uncertainty, leverage changes or transient crowding.",
+      "expectedDirection": "higher means more stable beta",
+      "falsificationCriteria": [
+        "No stable matured Rank IC across multiple calendar years",
+        "The effect disappears after controlling for correlated style groups",
+        "Implementation costs or sparse history dominate the apparent signal"
+      ],
+      "mechanismSource": "config/quantaalpha/hypothesis_seed_library.yaml",
+      "tags": [
+        "beta",
+        "style",
+        "deterministic",
+        "real_data"
+      ],
+      "version": "aster-style-factors-v1",
+      "statusReason": "Canonical Aster diagnostics passed research readiness gates; predictive merit remains subject to Factor Council review",
+      "metrics": {
+        "rankIc": 0.04428184467496065,
+        "rankIcIr": 0.38642609527245514,
+        "coverage": 0.9982142559976036,
+        "turnover": 0.016855327328557095,
+        "correlation": 0.41749612444356327,
+        "observations": 2272
+      },
+      "yearlyRankIc": {
+        "2017": 0.047075311624065454,
+        "2018": 0.06545784031245917,
+        "2019": -0.011590905991428356,
+        "2020": 0.011091139748504614,
+        "2021": 0.05984132929768774,
+        "2022": 0.03825430682912224,
+        "2023": 0.09065285511982442,
+        "2024": 0.04462010450276675,
+        "2025": 0.03399882325162734,
+        "2026": 0.06919374038781219
+      },
+      "artifact": {
+        "rows": 156525,
+        "instruments": 810,
+        "firstDate": "2017-06-09",
+        "lastDate": "2026-11-20",
+        "digest": "4c41261bb1c9"
+      }
+    },
+    {
+      "id": "beta_shrunk_252",
+      "name": "Shrunk Rolling Beta",
+      "group": "style_beta",
+      "family": "beta",
+      "origin": "aster_style_factors",
+      "status": "validated",
+      "researchEligible": true,
+      "demoEligible": true,
+      "pitCompliant": true,
+      "expression": "-(0.6 * beta_252 + 0.4)",
+      "description": "Negative 252-session market beta shrunk toward one.",
+      "hypothesis": "Reliably estimated lower-beta stocks earn stronger subsequent risk-adjusted returns.",
+      "mechanism": "Leverage constraints and lottery demand can overprice high-beta stocks; shrinkage reduces estimation noise.",
+      "expectedDirection": "higher means lower shrunk beta",
+      "falsificationCriteria": [
+        "No stable matured Rank IC across multiple calendar years",
+        "The effect disappears after controlling for correlated style groups",
+        "Implementation costs or sparse history dominate the apparent signal"
+      ],
+      "mechanismSource": "config/quantaalpha/hypothesis_seed_library.yaml",
+      "tags": [
+        "beta",
+        "style",
+        "deterministic",
+        "real_data"
+      ],
+      "version": "aster-style-factors-v1",
+      "statusReason": "Canonical Aster diagnostics passed research readiness gates; predictive merit remains subject to Factor Council review",
+      "metrics": {
+        "rankIc": 0.03633618034760329,
+        "rankIcIr": 0.14377634557701469,
+        "coverage": 0.9982142559976036,
+        "turnover": 0.0035431386021577615,
+        "correlation": 0.4086643422927451,
+        "observations": 2272
+      },
+      "yearlyRankIc": {
+        "2017": 0.03665923799870274,
+        "2018": 0.07807881984813751,
+        "2019": -0.017444665927574435,
+        "2020": 0.004970033044169118,
+        "2021": 0.04962474576548422,
+        "2022": 0.015305846426774359,
+        "2023": 0.1071078616209249,
+        "2024": 0.05662994040065728,
+        "2025": -0.09410789367521934,
+        "2026": 0.1496038330533073
+      },
+      "artifact": {
+        "rows": 156525,
+        "instruments": 810,
+        "firstDate": "2017-06-09",
+        "lastDate": "2026-11-20",
+        "digest": "4c41261bb1c9"
+      }
+    },
+    {
       "id": "ca5e2faad92f5d24",
       "name": "Signed_Path_Smoothness_40D",
       "group": "quanta_pv_b08",
@@ -2283,6 +2454,519 @@
         "firstDate": "2016-12-22",
         "lastDate": "2026-10-31",
         "digest": "d27da15945f0"
+      }
+    },
+    {
+      "id": "liquidity_low_volume_persistence",
+      "name": "Low-Volume Persistence",
+      "group": "style_liquidity",
+      "family": "liquidity",
+      "origin": "aster_style_factors",
+      "status": "validated",
+      "researchEligible": true,
+      "demoEligible": true,
+      "pitCompliant": true,
+      "expression": "-mean(volume<rolling_quantile(volume,60,0.2),20)",
+      "description": "Negative fraction of recent sessions with unusually low own-history volume.",
+      "hypothesis": "Persistent low participation predicts weaker tradability and less reliable apparent alpha.",
+      "mechanism": "Attention scarcity increases trading frictions and implementation risk.",
+      "expectedDirection": "higher means less persistent low-volume trading",
+      "falsificationCriteria": [
+        "No stable matured Rank IC across multiple calendar years",
+        "The effect disappears after controlling for correlated style groups",
+        "Implementation costs or sparse history dominate the apparent signal"
+      ],
+      "mechanismSource": "config/quantaalpha/hypothesis_seed_library.yaml",
+      "tags": [
+        "liquidity",
+        "style",
+        "deterministic",
+        "real_data"
+      ],
+      "version": "aster-style-factors-v1",
+      "statusReason": "Canonical Aster diagnostics passed research readiness gates; predictive merit remains subject to Factor Council review",
+      "metrics": {
+        "rankIc": -0.025941065395090453,
+        "rankIcIr": -0.2069173857073386,
+        "coverage": 0.9963587545978281,
+        "turnover": 0.020419156055447443,
+        "correlation": 0.30910584692165577,
+        "observations": 2362
+      },
+      "yearlyRankIc": {
+        "2017": -0.0004066323705800947,
+        "2018": -0.0077894571079121675,
+        "2019": -0.02226539193591987,
+        "2020": 0.025599923369779076,
+        "2021": -0.07578836295233209,
+        "2022": -0.038291365430205504,
+        "2023": -0.05372835446820273,
+        "2024": -0.04789025052305467,
+        "2025": -0.022074452812380116,
+        "2026": -0.013078945853852048
+      },
+      "artifact": {
+        "rows": 161272,
+        "instruments": 810,
+        "firstDate": "2017-01-20",
+        "lastDate": "2026-11-20",
+        "digest": "4c41261bb1c9"
+      }
+    },
+    {
+      "id": "liquidity_relative_volume_impact",
+      "name": "Relative-Volume Price Impact",
+      "group": "style_liquidity",
+      "family": "liquidity",
+      "origin": "aster_style_factors",
+      "status": "validated",
+      "researchEligible": true,
+      "demoEligible": true,
+      "pitCompliant": true,
+      "expression": "-mean(abs(return)/(volume/median(volume,60)+0.1),20)",
+      "description": "Price impact scaled by volume relative to the stock's own history.",
+      "hypothesis": "Large price changes on weak own-history volume indicate shallow liquidity.",
+      "mechanism": "Limited participation allows temporary order imbalance to move prices more strongly.",
+      "expectedDirection": "higher means lower relative-volume price impact",
+      "falsificationCriteria": [
+        "No stable matured Rank IC across multiple calendar years",
+        "The effect disappears after controlling for correlated style groups",
+        "Implementation costs or sparse history dominate the apparent signal"
+      ],
+      "mechanismSource": "config/quantaalpha/hypothesis_seed_library.yaml",
+      "tags": [
+        "liquidity",
+        "style",
+        "deterministic",
+        "real_data"
+      ],
+      "version": "aster-style-factors-v1",
+      "statusReason": "Canonical Aster diagnostics passed research readiness gates; predictive merit remains subject to Factor Council review",
+      "metrics": {
+        "rankIc": 0.039679348908608074,
+        "rankIcIr": 0.1942753731564956,
+        "coverage": 0.9961058046461354,
+        "turnover": 0.0136895932234564,
+        "correlation": 0.6849413608930169,
+        "observations": 2362
+      },
+      "yearlyRankIc": {
+        "2017": 0.025231175042317876,
+        "2018": 0.04399849355286773,
+        "2019": -0.01584480654513383,
+        "2020": -0.013154058061387447,
+        "2021": 0.050353746991176986,
+        "2022": 0.034259934618929,
+        "2023": 0.11701902262973005,
+        "2024": 0.08613125136750552,
+        "2025": -0.047427591042067334,
+        "2026": 0.13490906763219573
+      },
+      "artifact": {
+        "rows": 160958,
+        "instruments": 810,
+        "firstDate": "2017-01-20",
+        "lastDate": "2026-11-20",
+        "digest": "4c41261bb1c9"
+      }
+    },
+    {
+      "id": "liquidity_volume_instability",
+      "name": "Volume Stability",
+      "group": "style_liquidity",
+      "family": "liquidity",
+      "origin": "aster_style_factors",
+      "status": "validated",
+      "researchEligible": true,
+      "demoEligible": true,
+      "pitCompliant": true,
+      "expression": "-std(delta(log(volume+1)),60)",
+      "description": "Negative volatility of changes in log trading volume.",
+      "hypothesis": "Unstable participation signals event dependence and less dependable liquidity.",
+      "mechanism": "Large changes in trading activity proxy for intermittent attention and liquidity provision.",
+      "expectedDirection": "higher means more stable trading participation",
+      "falsificationCriteria": [
+        "No stable matured Rank IC across multiple calendar years",
+        "The effect disappears after controlling for correlated style groups",
+        "Implementation costs or sparse history dominate the apparent signal"
+      ],
+      "mechanismSource": "config/quantaalpha/hypothesis_seed_library.yaml",
+      "tags": [
+        "liquidity",
+        "style",
+        "deterministic",
+        "real_data"
+      ],
+      "version": "aster-style-factors-v1",
+      "statusReason": "Canonical Aster diagnostics passed research readiness gates; predictive merit remains subject to Factor Council review",
+      "metrics": {
+        "rankIc": 0.025792210506371906,
+        "rankIcIr": 0.26740349831965604,
+        "coverage": 0.9962565458216734,
+        "turnover": 0.014250487245276642,
+        "correlation": 0.14471559389011993,
+        "observations": 2372
+      },
+      "yearlyRankIc": {
+        "2017": 0.0455537698967126,
+        "2018": -0.011657389974540055,
+        "2019": 0.007846442708969985,
+        "2020": 0.045802291713129314,
+        "2021": -0.01747070417722061,
+        "2022": 0.03364127760214209,
+        "2023": 0.03835778942963468,
+        "2024": 0.03689365921149333,
+        "2025": 0.04073108844960159,
+        "2026": 0.0415336490897228
+      },
+      "artifact": {
+        "rows": 161882,
+        "instruments": 810,
+        "firstDate": "2017-01-06",
+        "lastDate": "2026-11-20",
+        "digest": "4c41261bb1c9"
+      }
+    },
+    {
+      "id": "momentum_market_residual",
+      "name": "Market Residual Momentum",
+      "group": "style_momentum",
+      "family": "momentum",
+      "origin": "aster_style_factors",
+      "status": "validated",
+      "researchEligible": true,
+      "demoEligible": true,
+      "pitCompliant": true,
+      "expression": "sum(return-beta_252_lag*benchmark_return,120,skip_recent=20)",
+      "description": "Medium-horizon momentum after removing lagged benchmark beta.",
+      "hypothesis": "Firm-specific residual momentum persists more reliably than benchmark-driven momentum.",
+      "mechanism": "Removing market returns isolates gradual incorporation of firm-specific information.",
+      "expectedDirection": "higher residual momentum predicts higher return",
+      "falsificationCriteria": [
+        "No stable matured Rank IC across multiple calendar years",
+        "The effect disappears after controlling for correlated style groups",
+        "Implementation costs or sparse history dominate the apparent signal"
+      ],
+      "mechanismSource": "config/quantaalpha/hypothesis_seed_library.yaml",
+      "tags": [
+        "momentum",
+        "style",
+        "deterministic",
+        "real_data"
+      ],
+      "version": "aster-style-factors-v1",
+      "statusReason": "Canonical Aster diagnostics passed research readiness gates; predictive merit remains subject to Factor Council review",
+      "metrics": {
+        "rankIc": 0.0012965214822534502,
+        "rankIcIr": 0.007324175107972558,
+        "coverage": 0.9953009746273814,
+        "turnover": 0.01316917033009249,
+        "correlation": 0.7945787676225121,
+        "observations": 2192
+      },
+      "yearlyRankIc": {
+        "2017": 0.15787509190721735,
+        "2018": 0.002006587500513486,
+        "2019": -0.0017920120458280696,
+        "2020": 0.05647805557322094,
+        "2021": -0.029928256594349934,
+        "2022": -0.03775397146462758,
+        "2023": 0.02241405822653183,
+        "2024": -0.020172793843605086,
+        "2025": 0.00985034351494231,
+        "2026": -0.036772450264724206
+      },
+      "artifact": {
+        "rows": 150904,
+        "instruments": 787,
+        "firstDate": "2017-09-29",
+        "lastDate": "2026-11-20",
+        "digest": "4c41261bb1c9"
+      }
+    },
+    {
+      "id": "momentum_path_quality",
+      "name": "Momentum Path Quality",
+      "group": "style_momentum",
+      "family": "momentum",
+      "origin": "aster_style_factors",
+      "status": "validated",
+      "researchEligible": true,
+      "demoEligible": true,
+      "pitCompliant": true,
+      "expression": "sum(return,120)*abs(sum(return,120))/sum(abs(return),120),skip_recent=20",
+      "description": "Signed momentum weighted by the smoothness of its return path.",
+      "hypothesis": "Smooth trends are more likely to persist than jump-dominated cumulative returns.",
+      "mechanism": "Smooth price paths are consistent with gradual information absorption rather than temporary attention shocks.",
+      "expectedDirection": "higher means smoother positive momentum",
+      "falsificationCriteria": [
+        "No stable matured Rank IC across multiple calendar years",
+        "The effect disappears after controlling for correlated style groups",
+        "Implementation costs or sparse history dominate the apparent signal"
+      ],
+      "mechanismSource": "config/quantaalpha/hypothesis_seed_library.yaml",
+      "tags": [
+        "momentum",
+        "style",
+        "deterministic",
+        "real_data"
+      ],
+      "version": "aster-style-factors-v1",
+      "statusReason": "Canonical Aster diagnostics passed research readiness gates; predictive merit remains subject to Factor Council review",
+      "metrics": {
+        "rankIc": -0.0009883054147033904,
+        "rankIcIr": -0.005198385134406499,
+        "coverage": 0.9981816745398069,
+        "turnover": 0.013513919278078546,
+        "correlation": 0.7945787676225121,
+        "observations": 2322
+      },
+      "yearlyRankIc": {
+        "2017": 0.05933430234971596,
+        "2018": 0.005091815338248384,
+        "2019": -0.007456658109281295,
+        "2020": 0.056437155293320176,
+        "2021": -0.028583402119295796,
+        "2022": -0.0375079514283595,
+        "2023": 0.031145283105799185,
+        "2024": -0.035126267877587054,
+        "2025": 0.010218086155037755,
+        "2026": -0.06366085232761817
+      },
+      "artifact": {
+        "rows": 159701,
+        "instruments": 810,
+        "firstDate": "2017-03-24",
+        "lastDate": "2026-11-20",
+        "digest": "4c41261bb1c9"
+      }
+    },
+    {
+      "id": "momentum_rank_persistence",
+      "name": "Rank Momentum Persistence",
+      "group": "style_momentum",
+      "family": "momentum",
+      "origin": "aster_style_factors",
+      "status": "validated",
+      "researchEligible": true,
+      "demoEligible": true,
+      "pitCompliant": true,
+      "expression": "mean(cs_rank(return),120,skip_recent=20)",
+      "description": "Average daily cross-sectional return rank with a recent-period skip.",
+      "hypothesis": "Persistent relative return rank is more robust than momentum dominated by a few outliers.",
+      "mechanism": "Gradual information diffusion creates persistent ordering across the stock universe.",
+      "expectedDirection": "higher persistent rank predicts higher return",
+      "falsificationCriteria": [
+        "No stable matured Rank IC across multiple calendar years",
+        "The effect disappears after controlling for correlated style groups",
+        "Implementation costs or sparse history dominate the apparent signal"
+      ],
+      "mechanismSource": "config/quantaalpha/hypothesis_seed_library.yaml",
+      "tags": [
+        "momentum",
+        "style",
+        "deterministic",
+        "real_data"
+      ],
+      "version": "aster-style-factors-v1",
+      "statusReason": "Canonical Aster diagnostics passed research readiness gates; predictive merit remains subject to Factor Council review",
+      "metrics": {
+        "rankIc": 0.027631720393903093,
+        "rankIcIr": 0.15912987404840168,
+        "coverage": 0.9501640881975629,
+        "turnover": 0.01288853571494187,
+        "correlation": 0.6701464486933408,
+        "observations": 2322
+      },
+      "yearlyRankIc": {
+        "2017": 0.06374913965228758,
+        "2018": 0.005797308140484589,
+        "2019": 0.011380572564528948,
+        "2020": 0.06499385083629826,
+        "2021": -0.02178728414494231,
+        "2022": -0.004699734031669251,
+        "2023": 0.09842486051797905,
+        "2024": 0.024493793727622518,
+        "2025": 0.020666991956430045,
+        "2026": 0.019245763441698118
+      },
+      "artifact": {
+        "rows": 149941,
+        "instruments": 809,
+        "firstDate": "2017-03-24",
+        "lastDate": "2026-11-20",
+        "digest": "4c41261bb1c9"
+      }
+    },
+    {
+      "id": "residual_volatility_downside",
+      "name": "Residual Downside Volatility",
+      "group": "style_residual_volatility",
+      "family": "residual_volatility",
+      "origin": "aster_style_factors",
+      "status": "validated",
+      "researchEligible": true,
+      "demoEligible": true,
+      "pitCompliant": true,
+      "expression": "-sqrt(mean(min(residual_return,0)^2,120))",
+      "description": "Negative downside semideviation of market-residual returns.",
+      "hypothesis": "Residual downside variation identifies firm-specific fragility more directly than symmetric volatility.",
+      "mechanism": "Negative residual shocks reveal forced-selling exposure and unresolved firm-specific risk.",
+      "expectedDirection": "higher means lower residual downside volatility",
+      "falsificationCriteria": [
+        "No stable matured Rank IC across multiple calendar years",
+        "The effect disappears after controlling for correlated style groups",
+        "Implementation costs or sparse history dominate the apparent signal"
+      ],
+      "mechanismSource": "config/quantaalpha/hypothesis_seed_library.yaml",
+      "tags": [
+        "residual_volatility",
+        "style",
+        "deterministic",
+        "real_data"
+      ],
+      "version": "aster-style-factors-v1",
+      "statusReason": "Canonical Aster diagnostics passed research readiness gates; predictive merit remains subject to Factor Council review",
+      "metrics": {
+        "rankIc": 0.05838675281071149,
+        "rankIcIr": 0.30862545695484855,
+        "coverage": 0.9975578867683869,
+        "turnover": 0.0051753902882657995,
+        "correlation": 0.8181772965582315,
+        "observations": 2242
+      },
+      "yearlyRankIc": {
+        "2017": 0.03241450820084937,
+        "2018": 0.06885297637017312,
+        "2019": -0.0011228701961679794,
+        "2020": 0.008797364276332851,
+        "2021": 0.057621948439906374,
+        "2022": 0.039864022358696315,
+        "2023": 0.14244193390235016,
+        "2024": 0.09083924944687759,
+        "2025": 0.0006814303702254562,
+        "2026": 0.14734033486590978
+      },
+      "artifact": {
+        "rows": 154479,
+        "instruments": 788,
+        "firstDate": "2017-07-21",
+        "lastDate": "2026-11-20",
+        "digest": "4c41261bb1c9"
+      }
+    },
+    {
+      "id": "residual_volatility_idiosyncratic",
+      "name": "Idiosyncratic Volatility",
+      "group": "style_residual_volatility",
+      "family": "residual_volatility",
+      "origin": "aster_style_factors",
+      "status": "validated",
+      "researchEligible": true,
+      "demoEligible": true,
+      "pitCompliant": true,
+      "expression": "-std(return-beta_252_lag*benchmark_return,60)",
+      "description": "Negative volatility of market-residual daily returns.",
+      "hypothesis": "Lower idiosyncratic volatility predicts stronger subsequent risk-adjusted performance.",
+      "mechanism": "Lottery preference and limits to arbitrage can overprice high-idiosyncratic-volatility stocks.",
+      "expectedDirection": "higher means lower idiosyncratic volatility",
+      "falsificationCriteria": [
+        "No stable matured Rank IC across multiple calendar years",
+        "The effect disappears after controlling for correlated style groups",
+        "Implementation costs or sparse history dominate the apparent signal"
+      ],
+      "mechanismSource": "config/quantaalpha/hypothesis_seed_library.yaml",
+      "tags": [
+        "residual_volatility",
+        "style",
+        "deterministic",
+        "real_data"
+      ],
+      "version": "aster-style-factors-v1",
+      "statusReason": "Canonical Aster diagnostics passed research readiness gates; predictive merit remains subject to Factor Council review",
+      "metrics": {
+        "rankIc": 0.07392362117883128,
+        "rankIcIr": 0.38730435758842713,
+        "coverage": 0.9975578867683869,
+        "turnover": 0.007530823359267869,
+        "correlation": 0.8181772965582315,
+        "observations": 2242
+      },
+      "yearlyRankIc": {
+        "2017": 0.03232547638992695,
+        "2018": 0.08256689117821076,
+        "2019": 0.017893843326743118,
+        "2020": 0.007488357336082132,
+        "2021": 0.08187068445324168,
+        "2022": 0.09542469502418126,
+        "2023": 0.14650624188200473,
+        "2024": 0.12106184901400387,
+        "2025": -0.0024004890188856214,
+        "2026": 0.14930140587063137
+      },
+      "artifact": {
+        "rows": 154479,
+        "instruments": 788,
+        "firstDate": "2017-07-21",
+        "lastDate": "2026-11-20",
+        "digest": "4c41261bb1c9"
+      }
+    },
+    {
+      "id": "residual_volatility_of_volatility",
+      "name": "Residual Volatility Stability",
+      "group": "style_residual_volatility",
+      "family": "residual_volatility",
+      "origin": "aster_style_factors",
+      "status": "validated",
+      "researchEligible": true,
+      "demoEligible": true,
+      "pitCompliant": true,
+      "expression": "-std(rolling_std(residual_return,20),120)",
+      "description": "Negative volatility of rolling idiosyncratic volatility.",
+      "hypothesis": "Unstable idiosyncratic volatility is adverse beyond its average level.",
+      "mechanism": "Volatility-of-volatility captures changing information uncertainty and intermittent liquidity stress.",
+      "expectedDirection": "higher means more stable residual volatility",
+      "falsificationCriteria": [
+        "No stable matured Rank IC across multiple calendar years",
+        "The effect disappears after controlling for correlated style groups",
+        "Implementation costs or sparse history dominate the apparent signal"
+      ],
+      "mechanismSource": "config/quantaalpha/hypothesis_seed_library.yaml",
+      "tags": [
+        "residual_volatility",
+        "style",
+        "deterministic",
+        "real_data"
+      ],
+      "version": "aster-style-factors-v1",
+      "statusReason": "Canonical Aster diagnostics passed research readiness gates; predictive merit remains subject to Factor Council review",
+      "metrics": {
+        "rankIc": 0.05990199555352145,
+        "rankIcIr": 0.37703877613884534,
+        "coverage": 0.9959006634452582,
+        "turnover": 0.005373254789378822,
+        "correlation": 0.6765231443758469,
+        "observations": 2207
+      },
+      "yearlyRankIc": {
+        "2017": 0.10902330256787578,
+        "2018": 0.05922869310971193,
+        "2019": 0.04802074284218682,
+        "2020": 0.058493507415480046,
+        "2021": 0.034090705721807245,
+        "2022": 0.04206065721212336,
+        "2023": 0.0866381274896221,
+        "2024": 0.06223460262076136,
+        "2025": -0.002131154616528197,
+        "2026": 0.15447880586055626
+      },
+      "artifact": {
+        "rows": 151963,
+        "instruments": 787,
+        "firstDate": "2017-09-08",
+        "lastDate": "2026-11-20",
+        "digest": "4c41261bb1c9"
       }
     },
     {

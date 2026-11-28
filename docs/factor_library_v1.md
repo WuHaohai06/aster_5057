@@ -21,8 +21,9 @@ Factor Library 是因子定义、数值、版本、血缘、诊断和生命周�
 | PIT 财务因子 | 2 | `validated`，但暂不满足研究覆盖率门槛 |
 | 财报文本因子 | 3 | `candidate`，当前为两份文档的烟雾数据 |
 | 财报 AI 因子 | 5 | `candidate`；有完整诊断和回测接入，但覆盖率低于研究门槛 |
+| 市场型风格因子 | 12 | `validated`；Beta、Momentum、Residual Volatility、Liquidity 各3个 |
 
-共42个唯一 `factor_id`；当前状态统计为31个 `validated`、3个 `demo_selected` 和8个 `candidate`。
+共54个唯一 `factor_id`。风格因子名称不使用 `risk_` 前缀，并以四个 `style_*` group 供 Council 选择。
 
 ## 标准数值结构
 
@@ -133,6 +134,7 @@ python .\scripts\manage_factor_library.py export-council `
 - 五个财报 AI 因子的全期覆盖率约42.6%–42.8%，低于正式研究政策的75%，因此仍为 `candidate` 且 `research_eligible=false`；
 - 2021-12-31 演示截面覆盖率约29.75%–30.23%，有169个成熟日度 IC 观测；独立 showcase 政策允许其进入课程演示，但不会改变主 Catalog 的研究状态；
 - 三个确定性财报文本因子仍是两份文档的 smoke 数据，不满足正式诊断条件。
+- 12个市场型风格因子按5个交易日采样物化，共约188万行；覆盖率95.0%–99.9%，已通过统一数据就绪门槛。`validated` 只表示可研究，不表示 Council 必须选择。
 
 缺少诊断的候选因子会保留在展示 Registry 中，但不会通过 Factor Council 的确定性证据门槛。
 

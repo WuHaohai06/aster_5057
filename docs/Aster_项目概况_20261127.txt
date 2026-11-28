@@ -1,0 +1,104 @@
+Aster AI 对冲基金研究平台 · 项目概况
+Group 7 · 2026-11-27
+
+
+【访问地址】
+
+本机：http://127.0.0.1:8765/
+公网：https://stan-connect-synthetic-telecharger.trycloudflare.com
+（Cloudflare Quick Tunnel，随隧道进程存活；重启会生成新地址，仅只读脱敏数据）
+
+
+【1. 功能链路】
+
+PIT 数据 / 财报 / 公告 → 因子库 → QuantaAlpha AI 因子挖掘 → 季度证据刷新
+→ Factor Council 选因子 → Portfolio Council 定档位与行业
+→ 确定性优化器 + IC（CSI 500）期货对冲 → 回测 / 回放 → 网页控制台
+
+证据链已刷新 4 个季度节点：2025-12-31、2026-03-31、2026-06-30、2026-09-30。
+
+
+【2. 因子库】
+
+总数 72 个：61 validated / 3 demo_selected / 8 candidate，其中 62 个 research eligible。
+
+来源：
+- 44 个 QuantaAlpha（最新一批 8 个方向、6 个成功、新增 18 个）
+- 12 个风格因子
+- 8 个 filing 因子（5 个 AI + 3 个 parser）
+- 6 个确定性基线
+- 2 个财务因子
+
+
+【3. 策略设定（月频 demo）】
+
+- 票池：CSI 500
+- 节奏：月频 council 定方向，5 日调仓
+- 净 β 区间：-0.5 ~ +0.2（研究模式 ±0.15）
+- 行业主动 tilt：demo 上限 10%（优化器硬上限 20%）
+- 对冲：IC（CSI 500）股指期货，计入交易成本与基差
+- 回测区间：2022-01-04 至 2026-11-23
+- 两种口径：research（PIT）与 showcase_reenactment（前视，带披露）
+
+
+【4. AI 参与的部分】
+
+- 因子挖掘：QuantaAlpha 生成假设与候选因子
+- Factor Council：基于 PIT 证据投票选因子
+- Portfolio Council：选风险档位、行业超低配、净 β
+- 报告撰写：只引用 PIT 证据的季度/月度 memo
+- 不参与：收益预测（Ridge）、组合优化、成本核算——这些是确定性代码
+
+
+【5. 回测绩效】
+
+版本                     期末 NAV   年化      Sharpe    最大回撤    2026
+--------------------------------------------------------------------------
+月频 demo v3（当前）      1.737     12.5%     1.14      -9.85%     +16.8%
+季频 v2                   1.559      9.9%     0.88      -12.5%      -0.9%
+showcase ±0.5             2.523     21.8%     1.69      -13.8%        —
+同期 CSI 500              0.833     -3.8%       —       -39.5%        —
+
+- 月频 demo：累计 +73.7%，2026 下半年 +6.9%（H2 最大回撤 -6.6%），方向命中率 83%。
+- 2026-07（指数 -17%）组合 +4.5%，2026-10（-13.6%）+5.3%，
+  对应“AI council 预测科技崩盘、提前做空”的故事。
+- 口径提醒：demo 是前视 showcase；研究口径基线仍为负收益。
+
+
+【6. 前端能展示什么】
+
+Command Center
+- 系统健康度、数据流水线、各 job 状态（挖掘/评估/回放）、当前 catalog digest 与 as-of。
+
+Factor Library
+- 72 个因子的完整列表：分组、状态、IC/ICIR、覆盖率、换手、年度 IC、表达式与假设。
+- 数据实时从 catalog.json 重建，刷新或 SSE 推送即更新，不需要重启。
+
+AI Council
+- Council bylaws、每季度 packet、Factor Council / Portfolio Council 的投票、理由、异议与最终决策。
+
+Filing Intelligence
+- 公告/财报的抽取结果、filing 因子打分与覆盖情况。
+
+Portfolio Replay（分上下两块）
+
+1) Quarterly Council Lab（上半部分，交互式）
+- 选择季度节点（2025-12-31 ~ 2026-09-30）；
+- “Start interactive quarterly replay” 手动发起会话，或
+  “Run automatic quarterly replay” 自动跑；
+- 逐轮查看 Factor Council 选因子 → Portfolio Council 选档位/行业；
+- 可以对单轮结果提出异议、修改后重跑，最终接受或拒绝整个 package。
+
+2) Saved portfolio replay（下半部分，已保存回测）
+- 右上角下拉框有 6 条 run：
+  · MONTHLY DEMO · beta 0.2 · tech-crash shorts（月频 v3，默认）
+  · QUARTERLY DEMO · beta 0.4（季频 v2）
+  · SHOWCASE DEMO · beta ±0.5
+  · 再加 3 条旧研究 run
+- 选中后显示：
+  · 指标卡：年化、Sharpe、最大回撤、最大 |β|
+  · Equity curve：Aster 青色实线 + CSI 500 灰色虚线；
+    鼠标悬停显示 日期 / NAV / CSI 500 / DD
+  · Exposure & cost：平均 gross、累计成本、股票换手、期货换手
+  · Interpretation：这条 run 能证明什么、不能证明什么
+- 数据通过 SSE 每 5 秒检查一次，有变化自动刷新。

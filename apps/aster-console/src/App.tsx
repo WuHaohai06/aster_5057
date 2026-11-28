@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
+﻿import { useEffect, useMemo, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
 import {
   Activity,
   Archive,
@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { loadSnapshot, subscribeToSnapshotEvents } from "./data";
 import type { Factor, Snapshot, ViewId } from "./types";
+import { actionLabel, factorCount, getLang, localized, localizedList, setLang, tr, type Lang } from "./i18n";
+import InteractiveReplay from "./InteractiveReplay";
 
 const navigation: Array<{ id: ViewId; label: string; icon: typeof Activity }> = [
   { id: "overview", label: "Command Center", icon: Gauge },
@@ -112,7 +114,7 @@ function Pipeline({ snapshot, navigate }: { snapshot: Snapshot; navigate: (view:
         <button className={`pipeline-stage state-${stage.state}`} key={stage.id} onClick={() => navigate(stage.view)}>
           <span className="pipeline-index">{String(index + 1).padStart(2, "0")}</span>
           <span className="pipeline-copy">
-            <strong>{stage.label}</strong>
+            <strong>{tr(stage.label)}</strong>
             <small>{stage.detail}</small>
           </span>
           <ChevronRight size={17} />
@@ -178,16 +180,16 @@ function Overview({ snapshot, navigate, openFactor }: {
       <section className="hero-grid">
         <div className="hero-copy">
           <div className="hero-kicker"><Sparkles size={15} /> AI-NATIVE RESEARCH OPERATING SYSTEM</div>
-          <h1>From raw evidence<br />to bounded decisions.</h1>
+          <h1>{tr("From raw evidence")}<br />{tr("to bounded decisions.")}</h1>
           <p>
-            CSI500 数据、AI 因子挖掘、机制评审、组合优化与回测，汇聚在同一个可审计的研究界面。
+            {tr("CSI500 data, AI factor mining, mechanism review, portfolio optimisation and backtesting, in one auditable research surface.")}
           </p>
           <div className="hero-actions">
-            <button className="primary-button" onClick={() => navigate("council")}>Open Council</button>
-            <button className="ghost-button" onClick={() => navigate("factors")}>Explore factors</button>
+            <button className="primary-button" onClick={() => navigate("council")}>{tr("Open Council")}</button>
+            <button className="ghost-button" onClick={() => navigate("factors")}>{tr("Explore factors")}</button>
           </div>
         </div>
-        <div className="signal-orbit" aria-label="Research system summary">
+        <div className="signal-orbit" aria-label={tr("Research system summary")}>
           <div className="orbit-ring ring-one" />
           <div className="orbit-ring ring-two" />
           <div className="orbit-center"><BrainCircuit size={34} /><strong>ASTER</strong><span>RESEARCH CORE</span></div>
@@ -199,40 +201,40 @@ function Overview({ snapshot, navigate, openFactor }: {
       </section>
 
       <div className="metric-grid">
-        <MetricCard label="FACTOR CATALOG" value={String(snapshot.factors.length)} detail={`${validated} passed lifecycle validation`} />
-        <MetricCard label="AI-MINED" value={String(quanta.length)} detail="QuantaAlpha candidates" tone="violet" />
-        <MetricCard label="FILING INTELLIGENCE" value={filingTotal ? percent(filingDone / filingTotal) : "—"} detail={`${filingDone} / ${filingTotal} reports scored`} tone="green" />
-        <MetricCard label="LATEST REPLAY" value={portfolio ? percent(portfolio.metrics.annual_return) : "—"} detail="annualised return · disclosed run" tone="amber" />
+        <MetricCard label={tr("FACTOR CATALOG")} value={String(snapshot.factors.length)} detail={`${validated} ${tr("passed lifecycle validation")}`} />
+        <MetricCard label={tr("AI-MINED")} value={String(quanta.length)} detail={tr("QuantaAlpha candidates")} tone="violet" />
+        <MetricCard label={tr("FILING INTELLIGENCE")} value={filingTotal ? percent(filingDone / filingTotal) : "—"} detail={`${filingDone} / ${filingTotal} ${tr("reports scored")}`} tone="green" />
+        <MetricCard label={tr("LATEST REPLAY")} value={portfolio ? percent(portfolio.metrics.annual_return) : "—"} detail={tr("annualised return · disclosed run")} tone="amber" />
       </div>
 
-      <Panel title="Research pipeline" kicker="Live system map" action={<StatusPill tone="live">WORKSPACE LIVE</StatusPill>}>
+      <Panel title={tr("Research pipeline")} kicker={tr("Live system map")} action={<StatusPill tone="live">{tr("WORKSPACE LIVE")}</StatusPill>}>
         <Pipeline snapshot={snapshot} navigate={navigate} />
       </Panel>
 
-      <Panel title="Background jobs" kicker="Live sanitised status" action={<StatusPill tone="live">AUTO REFRESH</StatusPill>}>
+      <Panel title={tr("Background jobs")} kicker={tr("Live sanitised status")} action={<StatusPill tone="live">{tr("AUTO REFRESH")}</StatusPill>}>
         <JobMonitor jobs={snapshot.jobs} />
       </Panel>
 
       <div className="two-column">
-        <Panel title="Signal leaderboard" kicker="Canonical diagnostics" action={<button className="text-button" onClick={() => navigate("factors")}>View library</button>}>
+        <Panel title={tr("Signal leaderboard")} kicker={tr("Canonical diagnostics")} action={<button className="text-button" onClick={() => navigate("factors")}>{tr("View library")}</button>}>
           <div className="leaderboard">
             {topFactors.map((factor, index) => (
               <button key={factor.id} onClick={() => openFactor(factor)}>
                 <span className="rank">{index + 1}</span>
                 <span className="factor-ident"><strong>{factor.name}</strong><small>{factor.group}</small></span>
-                <span className="metric-pair"><small>RANK IC</small><strong>{decimal(factor.metrics.rankIc, 4)}</strong></span>
-                <span className="metric-pair"><small>ICIR</small><strong>{decimal(factor.metrics.rankIcIr)}</strong></span>
+                <span className="metric-pair"><small>{tr("RANK IC")}</small><strong>{decimal(factor.metrics.rankIc, 4)}</strong></span>
+                <span className="metric-pair"><small>{tr("ICIR")}</small><strong>{decimal(factor.metrics.rankIcIr)}</strong></span>
               </button>
             ))}
           </div>
         </Panel>
-        <Panel title="Latest Council state" kicker="Historical accepted artifact" action={<StatusPill tone={snapshot.factorCouncil.decision.fallbackUsed ? "warn" : "good"}>{snapshot.factorCouncil.decision.status.toUpperCase()}</StatusPill>}>
+        <Panel title={tr("Latest Council state")} kicker={tr("Historical accepted artifact")} action={<StatusPill tone={snapshot.factorCouncil.decision.fallbackUsed ? "warn" : "good"}>{snapshot.factorCouncil.decision.status.toUpperCase()}</StatusPill>}>
           <div className="council-summary">
             <div className="selected-strip">
               {snapshot.factorCouncil.decision.selectedGroups.map((group) => <span key={group}><Check size={14} />{group}</span>)}
             </div>
             <p>{snapshot.factorCouncil.decision.rationale}</p>
-            <button className="text-button" onClick={() => navigate("council")}>Inspect ballots and evidence</button>
+            <button className="text-button" onClick={() => navigate("council")}>{tr("Inspect ballots and evidence")}</button>
           </div>
         </Panel>
       </div>
@@ -249,7 +251,7 @@ function FactorLibrary({ snapshot, openFactor }: { snapshot: Snapshot; openFacto
   const filtered = useMemo(() => {
     const lowered = query.toLowerCase();
     return [...snapshot.factors]
-      .filter((factor) => !lowered || `${factor.name} ${factor.id} ${factor.group} ${factor.hypothesis}`.toLowerCase().includes(lowered))
+      .filter((factor) => !lowered || `${factor.name} ${factor.id} ${factor.group} ${factor.hypothesis} ${factor.hypothesisZh ?? ""} ${factor.descriptionZh ?? ""}`.toLowerCase().includes(lowered))
       .filter((factor) => origin === "all" || factor.origin === origin)
       .filter((factor) => status === "all" || factor.status === status)
       .sort((a, b) => {
@@ -262,24 +264,24 @@ function FactorLibrary({ snapshot, openFactor }: { snapshot: Snapshot; openFacto
   return (
     <div className="view-stack">
       <div className="page-heading">
-        <div><span className="eyebrow">UNIFIED FACTOR CATALOG</span><h1>Factor Library</h1><p>从经济学假设、标准诊断到 Council 生命周期的统一研究对象。</p></div>
-        <div className="heading-stats"><strong>{filtered.length}</strong><span>visible / {snapshot.factors.length} total</span></div>
+        <div><span className="eyebrow">{tr("UNIFIED FACTOR CATALOG")}</span><h1>{tr("Factor Library")}</h1><p>{tr("One research object, from economic hypothesis and canonical diagnostics to the Council lifecycle.")}</p></div>
+        <div className="heading-stats"><strong>{filtered.length}</strong><span>{tr("visible")} / {snapshot.factors.length} {tr("total")}</span></div>
       </div>
-      <Panel title="Catalog explorer" kicker="Search · filter · inspect">
+      <Panel title={tr("Catalog explorer")} kicker={tr("Search · filter · inspect")}>
         <div className="filter-bar">
-          <label className="search-field"><Search size={17} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search factor, group or hypothesis" /></label>
-          <label className="select-field"><Filter size={15} /><select value={origin} onChange={(event) => setOrigin(event.target.value)}><option value="all">All origins</option>{origins.map((item) => <option key={item}>{item}</option>)}</select></label>
-          <label className="select-field"><select value={status} onChange={(event) => setStatus(event.target.value)}><option value="all">All lifecycle states</option><option value="candidate">Candidate</option><option value="validated">Validated</option><option value="demo_selected">Demo selected</option></select></label>
-          <label className="select-field"><select value={sort} onChange={(event) => setSort(event.target.value as typeof sort)}><option value="rankIc">Sort: Rank IC</option><option value="coverage">Sort: Coverage</option><option value="name">Sort: Name</option></select></label>
+          <label className="search-field"><Search size={17} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={tr("Search factor, group or hypothesis")} /></label>
+          <label className="select-field"><Filter size={15} /><select value={origin} onChange={(event) => setOrigin(event.target.value)}><option value="all">{tr("All origins")}</option>{origins.map((item) => <option key={item}>{item}</option>)}</select></label>
+          <label className="select-field"><select value={status} onChange={(event) => setStatus(event.target.value)}><option value="all">{tr("All lifecycle states")}</option><option value="candidate">{tr("Candidate")}</option><option value="validated">{tr("Validated")}</option><option value="demo_selected">{tr("Demo selected")}</option></select></label>
+          <label className="select-field"><select value={sort} onChange={(event) => setSort(event.target.value as typeof sort)}><option value="rankIc">{tr("Sort: Rank IC")}</option><option value="coverage">{tr("Sort: Coverage")}</option><option value="name">{tr("Sort: Name")}</option></select></label>
         </div>
         <div className="factor-table-wrap">
           <table className="factor-table">
-            <thead><tr><th>Factor</th><th>Origin</th><th>Lifecycle</th><th>Rank IC</th><th>ICIR</th><th>Coverage</th><th>Turnover</th><th>Redundancy</th><th /></tr></thead>
+            <thead><tr><th>{tr("Factor")}</th><th>{tr("Origin")}</th><th>{tr("Lifecycle")}</th><th>{tr("Rank IC")}</th><th>{tr("ICIR")}</th><th>{tr("Coverage")}</th><th>{tr("Turnover")}</th><th>{tr("Redundancy")}</th><th /></tr></thead>
             <tbody>{filtered.map((factor) => (
               <tr key={factor.id} onClick={() => openFactor(factor)}>
                 <td><strong>{factor.name}</strong><small>{factor.id} · {factor.group}</small></td>
                 <td><span className="origin-tag">{factor.origin}</span></td>
-                <td><StatusPill tone={factor.status === "candidate" ? "neutral" : factor.status === "demo_selected" ? "violet" : "good"}>{factor.status.replace("_", " ")}</StatusPill></td>
+                <td><StatusPill tone={factor.status === "candidate" ? "neutral" : factor.status === "demo_selected" ? "violet" : "good"}>{tr(factor.status.replace("_", " "))}</StatusPill></td>
                 <td className={(factor.metrics.rankIc ?? 0) >= 0 ? "positive" : "negative"}>{decimal(factor.metrics.rankIc, 4)}</td>
                 <td>{decimal(factor.metrics.rankIcIr)}</td>
                 <td>{percent(factor.metrics.coverage)}</td>
@@ -301,23 +303,23 @@ function FactorDrawer({ factor, close }: { factor: Factor; close: () => void }) 
   return (
     <div className="drawer-backdrop" onMouseDown={close}>
       <aside className="factor-drawer" onMouseDown={(event) => event.stopPropagation()}>
-        <button className="icon-button drawer-close" onClick={close} aria-label="Close factor details"><X size={20} /></button>
+        <button className="icon-button drawer-close" onClick={close} aria-label={tr("Close factor details")}><X size={20} /></button>
         <span className="eyebrow">FACTOR DOSSIER · {factor.origin}</span>
         <h2>{factor.name}</h2>
-        <p className="drawer-description">{factor.description}</p>
+        <p className="drawer-description">{localized(factor.description, factor.descriptionZh)}</p>
         <div className="drawer-tags"><StatusPill tone={factor.status === "candidate" ? "neutral" : "good"}>{factor.status}</StatusPill>{factor.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
         <div className="drawer-metrics">
-          <div><small>RANK IC</small><strong>{decimal(factor.metrics.rankIc, 4)}</strong></div>
-          <div><small>ICIR</small><strong>{decimal(factor.metrics.rankIcIr)}</strong></div>
-          <div><small>COVERAGE</small><strong>{percent(factor.metrics.coverage)}</strong></div>
-          <div><small>TURNOVER</small><strong>{percent(factor.metrics.turnover)}</strong></div>
+          <div><small>{tr("RANK IC")}</small><strong>{decimal(factor.metrics.rankIc, 4)}</strong></div>
+          <div><small>{tr("ICIR")}</small><strong>{decimal(factor.metrics.rankIcIr)}</strong></div>
+          <div><small>{tr("COVERAGE")}</small><strong>{percent(factor.metrics.coverage)}</strong></div>
+          <div><small>{tr("TURNOVER")}</small><strong>{percent(factor.metrics.turnover)}</strong></div>
         </div>
-        <section className="dossier-section"><h3><BookOpenText size={17} />Economic hypothesis</h3><p>{factor.hypothesis || "No structured hypothesis has been registered."}</p></section>
-        <section className="dossier-section"><h3><GitBranch size={17} />Mechanism</h3><p>{factor.mechanism || "Mechanism review is pending."}</p><div className="direction-callout"><span>EXPECTED DIRECTION</span>{factor.expectedDirection || "Not specified"}</div></section>
-        <section className="dossier-section"><h3><Archive size={17} />Signal construction</h3><code>{factor.expression}</code></section>
-        <section className="dossier-section"><h3><ShieldCheck size={17} />Falsification criteria</h3><ul>{factor.falsificationCriteria.length ? factor.falsificationCriteria.map((item) => <li key={item}>{item}</li>) : <li>No explicit criterion registered.</li>}</ul></section>
-        {yearly.length > 0 && <section className="dossier-section"><h3><BarChart3 size={17} />Yearly Rank IC</h3><div className="year-bars">{yearly.map(([year, value]) => <div key={year}><span>{year}</span><div><i className={value >= 0 ? "bar-positive" : "bar-negative"} style={{ width: `${Math.abs(value) / maxAbs * 100}%` }} /></div><strong>{value.toFixed(3)}</strong></div>)}</div></section>}
-        <section className="lineage-box"><div><small>CATALOG ID</small><strong>{factor.id}</strong></div><div><small>ARTIFACT</small><strong>{factor.artifact.digest}</strong></div><div><small>PIT</small><strong>{factor.pitCompliant ? "COMPLIANT" : "REVIEW"}</strong></div></section>
+        <section className="dossier-section"><h3><BookOpenText size={17} />{tr("Economic hypothesis")}</h3><p>{localized(factor.hypothesis, factor.hypothesisZh) || "No structured hypothesis has been registered."}</p></section>
+        <section className="dossier-section"><h3><GitBranch size={17} />{tr("Mechanism")}</h3><p>{localized(factor.mechanism, factor.mechanismZh) || "Mechanism review is pending."}</p><div className="direction-callout"><span>{tr("EXPECTED DIRECTION")}</span>{localized(factor.expectedDirection, factor.expectedDirectionZh) || "Not specified"}</div></section>
+        <section className="dossier-section"><h3><Archive size={17} />{tr("Signal construction")}</h3><code>{factor.expression}</code></section>
+        <section className="dossier-section"><h3><ShieldCheck size={17} />{tr("Falsification criteria")}</h3><ul>{localizedList(factor.falsificationCriteria, factor.falsificationCriteriaZh).length ? localizedList(factor.falsificationCriteria, factor.falsificationCriteriaZh).map((item) => <li key={item}>{item}</li>) : <li>{tr("No explicit criterion registered.")}</li>}</ul></section>
+        {yearly.length > 0 && <section className="dossier-section"><h3><BarChart3 size={17} />{tr("Yearly Rank IC")}</h3><div className="year-bars">{yearly.map(([year, value]) => <div key={year}><span>{year}</span><div><i className={value >= 0 ? "bar-positive" : "bar-negative"} style={{ width: `${Math.abs(value) / maxAbs * 100}%` }} /></div><strong>{value.toFixed(3)}</strong></div>)}</div></section>}
+        <section className="lineage-box"><div><small>{tr("CATALOG ID")}</small><strong>{factor.id}</strong></div><div><small>{tr("ARTIFACT")}</small><strong>{factor.artifact.digest}</strong></div><div><small>{tr("PIT")}</small><strong>{factor.pitCompliant ? "COMPLIANT" : "REVIEW"}</strong></div></section>
       </aside>
     </div>
   );
@@ -330,32 +332,32 @@ function Council({ snapshot }: { snapshot: Snapshot }) {
   return (
     <div className="view-stack">
       <div className="page-heading">
-        <div><span className="eyebrow">BOUNDED MULTI-AGENT GOVERNANCE</span><h1>AI Council Chamber</h1><p>三位独立 Reviewer 提交证据化投票，Chair 在代码约束内形成最终因子组选择。</p></div>
-        <div className="heading-badges"><StatusPill tone="good">PACKET {packet.version || "V2"}</StatusPill><StatusPill tone={decision.fallbackUsed ? "warn" : "good"}>{decision.fallbackUsed ? "FALLBACK USED" : "ACCEPTED"}</StatusPill></div>
+        <div><span className="eyebrow">{tr("BOUNDED MULTI-AGENT GOVERNANCE")}</span><h1>{tr("AI Council Chamber")}</h1><p>{tr("Three independent reviewers submit evidence-based votes; the Chair forms the final factor-group selection inside code constraints.")}</p></div>
+        <div className="heading-badges"><StatusPill tone="good">{tr("PACKET")} {packet.version || "V2"}</StatusPill><StatusPill tone={decision.fallbackUsed ? "warn" : "good"}>{tr(decision.fallbackUsed ? "FALLBACK USED" : "ACCEPTED")}</StatusPill></div>
       </div>
-      {mechanismReviewPending && <div className="notice-banner"><CircleAlert size={18} /><div><strong>机制评审已升级，但当前展示的是历史 Council 运行。</strong><span>新版 packet 已包含机制字段；重新运行 Council 后会出现逐组机制评级。</span></div></div>}
+      {mechanismReviewPending && <div className="notice-banner"><CircleAlert size={18} /><div><strong>{tr("Mechanism review has been upgraded, but this page shows a historical Council run.")}</strong><span>{tr("The new packet carries mechanism fields; per-group mechanism ratings appear after the Council is re-run.")}</span></div></div>}
       <div className="council-layout">
-        <Panel title="Candidate groups" kicker={`Input cutoff · ${packet.inputCutoff}`} className="candidate-panel">
+        <Panel title={tr("Candidate groups")} kicker={`${tr("Input cutoff")} · ${packet.inputCutoff}`} className="candidate-panel">
           <div className="candidate-list">{packet.groups.map((item) => {
             const selected = decision.selectedGroups.includes(item.id);
-            return <button key={item.id} className={`${selectedGroup === item.id ? "active" : ""} ${selected ? "chosen" : ""}`} onClick={() => setSelectedGroup(item.id)}><span><strong>{item.id}</strong><small>{item.factorIds.length} factor{item.factorIds.length === 1 ? "" : "s"}</small></span><span className="candidate-score">{decimal(item.rankIc, 4)}</span></button>;
+            return <button key={item.id} className={`${selectedGroup === item.id ? "active" : ""} ${selected ? "chosen" : ""}`} onClick={() => setSelectedGroup(item.id)}><span><strong>{item.id}</strong><small>{factorCount(item.factorIds.length)}</small></span><span className="candidate-score">{decimal(item.rankIc, 4)}</span></button>;
           })}</div>
         </Panel>
-        <Panel title={group?.id ?? "Group evidence"} kicker="Mechanism + deterministic diagnostics" className="group-evidence">
+        <Panel title={group?.id ?? "Group evidence"} kicker={tr("Mechanism + deterministic diagnostics")} className="group-evidence">
           {group && <>
-            <div className="evidence-metrics"><div><small>MEDIAN RANK IC</small><strong>{decimal(group.rankIc, 4)}</strong></div><div><small>ICIR</small><strong>{decimal(group.rankIcIr)}</strong></div><div><small>TURNOVER</small><strong>{percent(group.turnover)}</strong></div><div><small>MAX CORR</small><strong>{percent(group.correlation)}</strong></div></div>
-            <div className="mechanism-stack">{group.mechanisms.map((item) => <article key={item.factorId}><span>{item.factorId}</span><h3>{item.hypothesis || "Hypothesis not registered"}</h3><p>{item.mechanism || "Mechanism explanation pending."}</p><small>{item.expectedDirection}</small></article>)}</div>
+            <div className="evidence-metrics"><div><small>{tr("MEDIAN RANK IC")}</small><strong>{decimal(group.rankIc, 4)}</strong></div><div><small>{tr("ICIR")}</small><strong>{decimal(group.rankIcIr)}</strong></div><div><small>{tr("TURNOVER")}</small><strong>{percent(group.turnover)}</strong></div><div><small>{tr("MAX CORR")}</small><strong>{percent(group.correlation)}</strong></div></div>
+            <div className="mechanism-stack">{group.mechanisms.map((item) => <article key={item.factorId}><span>{item.factorId}</span><h3>{localized(item.hypothesis, item.hypothesisZh) || "Hypothesis not registered"}</h3><p>{localized(item.mechanism, item.mechanismZh) || "Mechanism explanation pending."}</p><small>{localized(item.expectedDirection, item.expectedDirectionZh)}</small></article>)}</div>
           </>}
         </Panel>
       </div>
-      <Panel title="Independent ballots" kicker="Reviewer-level audit trail">
+      <Panel title={tr("Independent ballots")} kicker={tr("Reviewer-level audit trail")}>
         <div className="reviewer-grid">{ballots.map((ballot) => {
           const vote = ballot.votes.find((item) => item.group_id === selectedGroup);
-          return <article className="reviewer-card" key={ballot.role}><div className="reviewer-title"><div className="reviewer-icon"><Bot size={18} /></div><div><strong>{roleNames[ballot.role] ?? ballot.role}</strong><small>Independent reviewer</small></div>{vote && <StatusPill tone={vote.action === "enable" ? "good" : vote.action === "disable" ? "bad" : "warn"}>{vote.action}</StatusPill>}</div>{vote ? <><p>{vote.rationale}</p><div className="confidence"><span>CONFIDENCE</span><div><i style={{ width: `${vote.confidence * 100}%` }} /></div><strong>{percent(vote.confidence)}</strong></div>{vote.risks.length > 0 && <ul>{vote.risks.slice(0, 2).map((risk) => <li key={risk}>{risk}</li>)}</ul>}</> : <p>No historical vote for this newly eligible group.</p>}</article>;
+          return <article className="reviewer-card" key={ballot.role}><div className="reviewer-title"><div className="reviewer-icon"><Bot size={18} /></div><div><strong>{tr(roleNames[ballot.role] ?? ballot.role)}</strong><small>{tr("Independent reviewer")}</small></div>{vote && <StatusPill tone={vote.action === "enable" ? "good" : vote.action === "disable" ? "bad" : "warn"}>{actionLabel(vote.action)}</StatusPill>}</div>{vote ? <><p>{localized(vote.rationale, vote.rationale_zh)}</p><div className="confidence"><span>{tr("CONFIDENCE")}</span><div><i style={{ width: `${vote.confidence * 100}%` }} /></div><strong>{percent(vote.confidence)}</strong></div>{localizedList(vote.risks, vote.risks_zh).length > 0 && <ul>{localizedList(vote.risks, vote.risks_zh).slice(0, 2).map((risk) => <li key={risk}>{risk}</li>)}</ul>}</> : <p>{tr("No historical vote for this newly eligible group.")}</p>}</article>;
         })}</div>
       </Panel>
-      <Panel title="Chair decision" kicker={`${decision.decisionAt} · ${decision.promptVersion}`} action={<span className="confidence-badge">{percent(decision.confidence)} confidence</span>}>
-        <div className="chair-decision"><div className="chair-groups"><div><small>SELECTED</small>{decision.selectedGroups.map((item) => <span className="selected" key={item}><Check size={13} />{item}</span>)}</div><div><small>DISABLED</small>{decision.disabledGroups.map((item) => <span key={item}>{item}</span>)}</div></div><p>{decision.rationale}</p>{decision.fallbackReason && <div className="fallback-reason"><CircleAlert size={16} /><span>{decision.fallbackReason}</span></div>}</div>
+      <Panel title={tr("Chair decision")} kicker={`${decision.decisionAt} · ${decision.promptVersion}`} action={<span className="confidence-badge">{percent(decision.confidence)} {tr("confidence")}</span>}>
+        <div className="chair-decision"><div className="chair-groups"><div><small>{tr("SELECTED")}</small>{decision.selectedGroups.map((item) => <span className="selected" key={item}><Check size={13} />{item}</span>)}</div><div><small>{tr("DISABLED")}</small>{decision.disabledGroups.map((item) => <span key={item}>{item}</span>)}</div></div><p className="localized">{localized(decision.rationale, decision.rationaleZh)}</p>{decision.fallbackReason && <div className="fallback-reason"><CircleAlert size={16} /><span>{decision.fallbackReason}</span></div>}</div>
       </Panel>
     </div>
   );
@@ -363,26 +365,36 @@ function Council({ snapshot }: { snapshot: Snapshot }) {
 
 function PerformanceChart({ curve }: { curve: Snapshot["portfolio"]["runs"][number]["curve"] }) {
   const [hover, setHover] = useState<number | null>(null);
-  if (!curve.length) return <div className="empty-state">No replay curve available.</div>;
-  const min = Math.min(...curve.map((item) => item.nav));
-  const max = Math.max(...curve.map((item) => item.nav));
+  if (!curve.length) return <div className="empty-state">{tr("No replay curve available.")}</div>;
+  const withBenchmark = curve.every((item) => typeof item.benchmarkNav === "number");
+  const values = withBenchmark ? curve.flatMap((item) => [item.nav, item.benchmarkNav as number]) : curve.map((item) => item.nav);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
   const range = max - min || 1;
-  const points = curve.map((item, index) => `${index / (curve.length - 1) * 1000},${250 - (item.nav - min) / range * 210}`).join(" ");
+  const y = (value: number) => 250 - (value - min) / range * 210;
+  const x = (index: number) => index / (curve.length - 1) * 1000;
+  const points = curve.map((item, index) => `${x(index)},${y(item.nav)}`).join(" ");
+  const benchmarkPoints = withBenchmark ? curve.map((item, index) => `${x(index)},${y(item.benchmarkNav as number)}`).join(" ") : "";
   const active = hover == null ? curve[curve.length - 1] : curve[hover];
-  const activeX = (hover == null ? curve.length - 1 : hover) / (curve.length - 1) * 1000;
-  const activeY = 250 - (active.nav - min) / range * 210;
+  const activeX = x(hover == null ? curve.length - 1 : hover);
+  const activeY = y(active.nav);
   const onMove = (event: MouseEvent<SVGSVGElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
     setHover(Math.max(0, Math.min(curve.length - 1, Math.round((event.clientX - rect.left) / rect.width * (curve.length - 1)))));
   };
-  return <div className="performance-chart"><div className="chart-readout"><span>{active.date}</span><strong>NAV {active.nav.toFixed(3)}</strong><small>DD {percent(active.drawdown)}</small></div><svg viewBox="0 0 1000 280" preserveAspectRatio="none" onMouseMove={onMove} onMouseLeave={() => setHover(null)}><defs><linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#31d7c7" stopOpacity=".28" /><stop offset="100%" stopColor="#31d7c7" stopOpacity="0" /></linearGradient></defs><line x1="0" y1="250" x2="1000" y2="250" className="chart-axis" /><polygon points={`0,250 ${points} 1000,250`} fill="url(#area)" /><polyline points={points} className="chart-line" /><line x1={activeX} x2={activeX} y1="28" y2="250" className="chart-crosshair" /><circle cx={activeX} cy={activeY} r="6" className="chart-point" /></svg></div>;
+  const legend = <div style={{ display: "flex", gap: 18, fontSize: 12, color: "#8aa0b5", marginTop: 8 }}><span><i style={{ display: "inline-block", width: 18, height: 2, background: "#31d7c7", verticalAlign: "middle", marginRight: 6 }} />{tr("Aster")}</span>{withBenchmark ? <span><i style={{ display: "inline-block", width: 18, height: 2, background: "#8aa0b5", verticalAlign: "middle", marginRight: 6 }} />{tr("CSI 500")}</span> : null}</div>;
+  return <div className="performance-chart"><div className="chart-readout"><span>{active.date}</span><strong>{tr("NAV")} {active.nav.toFixed(3)}</strong>{withBenchmark ? <small>CSI 500 {(active.benchmarkNav as number).toFixed(3)}</small> : null}<small>{tr("DD")} {percent(active.drawdown)}</small></div><svg viewBox="0 0 1000 280" preserveAspectRatio="none" onMouseMove={onMove} onMouseLeave={() => setHover(null)}><defs><linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#31d7c7" stopOpacity=".28" /><stop offset="100%" stopColor="#31d7c7" stopOpacity="0" /></linearGradient></defs><line x1="0" y1="250" x2="1000" y2="250" className="chart-axis" /><polygon points={`0,250 ${points} 1000,250`} fill="url(#area)" />{withBenchmark ? <polyline points={benchmarkPoints} fill="none" stroke="#8aa0b5" strokeWidth={1.6} strokeDasharray="5 4" /> : null}<polyline points={points} className="chart-line" /><line x1={activeX} x2={activeX} y1="28" y2="250" className="chart-crosshair" /><circle cx={activeX} cy={activeY} r={6} className="chart-point" /></svg>{legend}</div>;
+}
+
+function SavedPortfolio({ snapshot }: { snapshot: Snapshot }) {
+  const [runId, setRunId] = useState(snapshot.portfolio.runs[0]?.id ?? "");
+  const run = snapshot.portfolio.runs.find((item) => item.id === runId) ?? snapshot.portfolio.runs[0];
+  if (!run) return <div className="empty-state">{tr("No portfolio replay is available.")}</div>;
+  return <div className="view-stack"><div className="page-heading"><div><span className="eyebrow">{tr("DETERMINISTIC OPTIMISATION + COUNCIL PROFILE")}</span><h1>{tr("Portfolio Replay")}</h1><p>{tr("NAV, drawdown, Beta and cost come from saved replayable runs; not a representation of future performance.")}</p></div><label className="select-field run-select"><select value={runId} onChange={(event) => setRunId(event.target.value)}>{snapshot.portfolio.runs.map((item) => <option key={item.id} value={item.id}>{tr(item.label)}</option>)}</select></label></div><div className="metric-grid"><MetricCard label={tr("ANNUALISED RETURN")} value={percent(run.metrics.annual_return)} detail={tr("saved replay")} tone={run.metrics.annual_return >= 0 ? "green" : "amber"} /><MetricCard label={tr("SHARPE")} value={decimal(run.metrics.sharpe, 2)} detail={tr("realised risk-adjusted")} /><MetricCard label={tr("MAX DRAWDOWN")} value={percent(run.metrics.max_drawdown)} detail={tr("peak-to-trough")} tone="amber" /><MetricCard label={tr("MAX ABS BETA")} value={decimal(run.metrics.max_abs_estimated_beta, 3)} detail={tr("after futures hedge")} tone="violet" /></div><Panel title={tr("Equity curve")} kicker={tr("Interactive saved replay")} action={<StatusPill tone="warn">{tr("COURSE DEMO · NOT ADVICE")}</StatusPill>}><PerformanceChart curve={run.curve} /></Panel>{run.report?.memo && <Panel title={tr("Council report")} kicker={tr("Latest report")} action={<StatusPill tone="violet">{run.report.decisionAt ?? ""}</StatusPill>}><div className="narrative-card"><Network size={22} /><div><small>{run.report.profile} · β {run.report.targetBeta} · {percent(run.report.confidence)}</small><p className="localized">{localized(run.report.memoEn, run.report.memo)}</p></div></div></Panel>}<div className="two-column"><Panel title={tr("Exposure & cost")} kicker={tr("Deterministic controls")}><div className="stat-list"><div><span>{tr("Mean gross exposure")}</span><strong>{percent(run.metrics.mean_gross_exposure)}</strong></div><div><span>{tr("Total cost fraction")}</span><strong>{percent(run.metrics.total_cost_fraction)}</strong></div><div><span>{tr("Stock turnover")}</span><strong>{decimal(run.metrics.total_stock_turnover, 2)}</strong></div><div><span>{tr("Futures turnover")}</span><strong>{decimal(run.metrics.total_futures_turnover, 2)}</strong></div></div></Panel><Panel title={tr("Interpretation")} kicker={tr("What this run proves")}><div className="narrative-card"><Network size={22} /><p>{tr("This curve shows that data, forecasting, optimisation, IC hedging and portfolio replay run under one audit contract. It is not a formal conclusion on strategy efficacy.")}</p></div></Panel></div></div>;
 }
 
 function Portfolio({ snapshot }: { snapshot: Snapshot }) {
-  const [runId, setRunId] = useState(snapshot.portfolio.runs[0]?.id ?? "");
-  const run = snapshot.portfolio.runs.find((item) => item.id === runId) ?? snapshot.portfolio.runs[0];
-  if (!run) return <div className="empty-state">No portfolio replay is available.</div>;
-  return <div className="view-stack"><div className="page-heading"><div><span className="eyebrow">DETERMINISTIC OPTIMISATION + COUNCIL PROFILE</span><h1>Portfolio Replay</h1><p>净值、回撤、Beta 与成本来自保存的可重放运行；不代表未来投资表现。</p></div><label className="select-field run-select"><select value={runId} onChange={(event) => setRunId(event.target.value)}>{snapshot.portfolio.runs.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label></div><div className="metric-grid"><MetricCard label="ANNUALISED RETURN" value={percent(run.metrics.annual_return)} detail="saved replay" tone={run.metrics.annual_return >= 0 ? "green" : "amber"} /><MetricCard label="SHARPE" value={decimal(run.metrics.sharpe, 2)} detail="realised risk-adjusted" /><MetricCard label="MAX DRAWDOWN" value={percent(run.metrics.max_drawdown)} detail="peak-to-trough" tone="amber" /><MetricCard label="MAX ABS BETA" value={decimal(run.metrics.max_abs_estimated_beta, 3)} detail="after futures hedge" tone="violet" /></div><Panel title="Equity curve" kicker="Interactive saved replay" action={<StatusPill tone="warn">COURSE DEMO · NOT ADVICE</StatusPill>}><PerformanceChart curve={run.curve} /></Panel><div className="two-column"><Panel title="Exposure & cost" kicker="Deterministic controls"><div className="stat-list"><div><span>Mean gross exposure</span><strong>{percent(run.metrics.mean_gross_exposure)}</strong></div><div><span>Total cost fraction</span><strong>{percent(run.metrics.total_cost_fraction)}</strong></div><div><span>Stock turnover</span><strong>{decimal(run.metrics.total_stock_turnover, 2)}</strong></div><div><span>Futures turnover</span><strong>{decimal(run.metrics.total_futures_turnover, 2)}</strong></div></div></Panel><Panel title="Interpretation" kicker="What this run proves"><div className="narrative-card"><Network size={22} /><p>这条曲线证明数据、预测、优化、IC 对冲和组合回放能够在同一套审计契约下运行。它不是对策略有效性的正式结论。</p></div></Panel></div></div>;
+  return <div className="view-stack"><InteractiveReplay /><SavedPortfolio snapshot={snapshot} /></div>;
 }
 
 function Filings({ snapshot }: { snapshot: Snapshot }) {
@@ -400,13 +412,15 @@ function Filings({ snapshot }: { snapshot: Snapshot }) {
     ["Capex intensity", "Investment burden and expansion intensity"],
     ["Risk level", "Disclosed operating and balance-sheet risks"],
   ];
-  return <div className="view-stack"><div className="page-heading"><div><span className="eyebrow">DOCUMENT → AI-FRIENDLY EVIDENCE → FACTOR ROWS</span><h1>Filing Intelligence</h1><p>财报原文经过结构化解析、引用定位和 DeepSeek 评分，最终转换为 PIT 因子记录。</p></div><StatusPill tone={score < total ? "live" : "good"}>{score < total ? "SCORING LIVE" : "COMPLETE"}</StatusPill></div><section className="filing-progress"><div className="progress-copy"><span>{filing.year_start ?? 2020}-{filing.year_end ?? 2025} ANNUAL REPORT BATCHES</span><strong>{percent(progress)}</strong><p>{score} of {total} scoreable reports completed</p></div><div className="radial-progress" style={{ "--progress": `${progress * 360}deg` } as CSSProperties}><div><FileSearch size={25} /><strong>{score}</strong><span>SCORED</span></div></div></section><div className="metric-grid"><MetricCard label="PARSED DOCUMENTS" value={`${parsed}/${documents}`} detail={`${filing.parse_failures ?? 0} parse failure`} /><MetricCard label="GENERATED FACTOR ROWS" value={compact(filing.factor_rows)} detail="five dimensions per successful report" tone="green" /><MetricCard label="TOKEN USAGE" value={compact(filing.token_usage?.total_tokens)} detail="prompt + completion" tone="violet" /><MetricCard label="OCR QUEUE" value={String(filing.needs_ocr ?? 0)} detail="documents requiring fallback" tone="amber" /></div>{years.length > 0 && <Panel title="Annual batches" kicker="2020-2025 completion ledger"><div className="filing-years">{years.map((year) => { const done = year.score_completed ?? 0; const count = year.score_total ?? year.documents_total ?? 0; return <article key={year.year}><span>{year.year}</span><strong>{done}/{count}</strong><small>{compact(year.factor_rows)} factor rows</small><StatusPill tone={year.state === "complete" ? "good" : "live"}>{year.state ?? "pending"}</StatusPill></article>; })}</div></Panel>}<Panel title="Financial narrative dimensions" kicker="Structured AI output"><div className="dimension-grid">{dimensions.map(([name, description], index) => <article key={name}><span>{String(index + 1).padStart(2, "0")}</span><div><strong>{name}</strong><p>{description}</p></div></article>)}</div></Panel><div className="notice-banner neutral"><ShieldCheck size={18} /><div><strong>Every score retains source-document lineage and page citations.</strong><span>Scores become usable only from the filing's public availability date.</span></div></div></div>;
+  return <div className="view-stack"><div className="page-heading"><div><span className="eyebrow">{tr("DOCUMENT → AI-FRIENDLY EVIDENCE → FACTOR ROWS")}</span><h1>{tr("Filing Intelligence")}</h1><p>{tr("Filing text is structurally parsed, citation-located and scored by DeepSeek, then converted into PIT factor records.")}</p></div><StatusPill tone={score < total ? "live" : "good"}>{tr(score < total ? "SCORING LIVE" : "COMPLETE")}</StatusPill></div><section className="filing-progress"><div className="progress-copy"><span>{filing.year_start ?? 2020}-{filing.year_end ?? 2025} {tr("ANNUAL REPORT BATCHES")}</span><strong>{percent(progress)}</strong><p>{score} / {total} {tr("scoreable reports completed")}</p></div><div className="radial-progress" style={{ "--progress": `${progress * 360}deg` } as CSSProperties}><div><FileSearch size={25} /><strong>{score}</strong><span>{tr("SCORED")}</span></div></div></section><div className="metric-grid"><MetricCard label={tr("PARSED DOCUMENTS")} value={`${parsed}/${documents}`} detail={`${filing.parse_failures ?? 0} ${tr("parse failure")}`} /><MetricCard label={tr("GENERATED FACTOR ROWS")} value={compact(filing.factor_rows)} detail={tr("five dimensions per successful report")} tone="green" /><MetricCard label={tr("TOKEN USAGE")} value={compact(filing.token_usage?.total_tokens)} detail={tr("prompt + completion")} tone="violet" /><MetricCard label={tr("OCR QUEUE")} value={String(filing.needs_ocr ?? 0)} detail={tr("documents requiring fallback")} tone="amber" /></div>{years.length > 0 && <Panel title={tr("Annual batches")} kicker={tr("2020-2025 completion ledger")}><div className="filing-years">{years.map((year) => { const done = year.score_completed ?? 0; const count = year.score_total ?? year.documents_total ?? 0; return <article key={year.year}><span>{year.year}</span><strong>{done}/{count}</strong><small>{compact(year.factor_rows)} {tr("factor rows")}</small><StatusPill tone={year.state === "complete" ? "good" : "live"}>{year.state ?? "pending"}</StatusPill></article>; })}</div></Panel>}<Panel title={tr("Financial narrative dimensions")} kicker={tr("Structured AI output")}><div className="dimension-grid">{dimensions.map(([name, description], index) => <article key={name}><span>{String(index + 1).padStart(2, "0")}</span><div><strong>{name}</strong><p>{description}</p></div></article>)}</div></Panel><div className="notice-banner neutral"><ShieldCheck size={18} /><div><strong>Every score retains source-document lineage and page citations.</strong><span>Scores become usable only from the filing's public availability date.</span></div></div></div>;
 }
 
 function App() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [error, setError] = useState("");
-  const [view, setView] = useState<ViewId>("overview");
+  const [view, setView] = useState<ViewId>(() => (new URLSearchParams(window.location.search).get("demo") === "tech-crash" ? "portfolio" : "overview"));
+  const [lang, setLangState] = useState<Lang>(getLang());
+  const switchLang = (next: Lang) => { setLang(next); setLangState(next); };
   const [mode, setMode] = useState<"research" | "showcase">("research");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [factor, setFactor] = useState<Factor | null>(null);
@@ -446,21 +460,27 @@ function App() {
     };
   }, []);
 
-  const navigate = (next: ViewId) => { setView(next); setSidebarOpen(false); window.scrollTo({ top: 0, behavior: "smooth" }); };
-  if (error) return <main className="load-screen"><CircleAlert size={30} /><h1>Snapshot unavailable</h1><p>{error}</p><code>python scripts/export_dashboard_snapshot.py</code></main>;
-  if (!snapshot) return <main className="load-screen"><div className="loader" /><h1>Booting research console</h1><p>Loading the audited workspace snapshot…</p></main>;
+  const navigate = (next: ViewId) => {
+    if (/(?:demo|start_node)=/.test(window.location.search)) {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+    setView(next);
+    setSidebarOpen(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  if (error) return <main className="load-screen"><CircleAlert size={30} /><h1>{tr("Snapshot unavailable")}</h1><p>{error}</p><code>python scripts/export_dashboard_snapshot.py</code></main>;
+  if (!snapshot) return <main className="load-screen"><div className="loader" /><h1>{tr("Booting research console")}</h1><p>{tr("Loading the audited workspace snapshot…")}</p></main>;
 
   return (
     <div className={`app-shell mode-${mode}`}>
       <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
         <div className="brand"><div className="brand-mark">A</div><div><strong>ASTER</strong><span>RESEARCH CONSOLE</span></div></div>
-        <nav>{navigation.map((item) => { const Icon = item.icon; return <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => navigate(item.id)}><Icon size={19} /><span>{item.label}</span></button>; })}</nav>
-        <div className={`sidebar-foot connection-${connection}`}><div><Activity size={15} /><span>Live feed</span><strong>{connection.toUpperCase()}</strong></div><small>Catalog {snapshot.meta.catalogDigest}</small></div>
+        <nav>{navigation.map((item) => { const Icon = item.icon; return <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => navigate(item.id)}><Icon size={19} /><span>{tr(item.label)}</span></button>; })}</nav>
+        <div className={`sidebar-foot connection-${connection}`}><div><Activity size={15} /><span>{tr("Live feed")}</span><strong>{connection.toUpperCase()}</strong></div><small>Catalog {snapshot.meta.catalogDigest}</small></div>
       </aside>
-      {sidebarOpen && <button className="sidebar-scrim" onClick={() => setSidebarOpen(false)} aria-label="Close navigation" />}
+      {sidebarOpen && <button className="sidebar-scrim" onClick={() => setSidebarOpen(false)} aria-label={tr("Close navigation")} />}
       <main className="workspace">
-        <header className="topbar"><button className="mobile-menu" onClick={() => setSidebarOpen(true)}><Menu size={20} /></button><div className="workspace-status"><span className={`live-dot connection-${connection}`} /><span>WORKSPACE</span><strong>CSI500 PIT</strong><i /> <span>AS OF</span><strong>{snapshot.meta.asOf}</strong><i /> <span>SYNC</span><strong>{lastSync ? humanDate(lastSync.toISOString()) : "—"}</strong></div><div className="mode-switch"><button className={mode === "research" ? "active" : ""} onClick={() => setMode("research")}>Research</button><button className={mode === "showcase" ? "active" : ""} onClick={() => setMode("showcase")}>Showcase</button></div></header>
-        {mode === "showcase" && <div className="showcase-disclosure"><CircleAlert size={15} />{snapshot.meta.showcaseDisclosure}</div>}
+        <header className="topbar"><button className="mobile-menu" onClick={() => setSidebarOpen(true)}><Menu size={20} /></button><div className="workspace-status"><span className={`live-dot connection-${connection}`} /><span>{tr("WORKSPACE")}</span><strong>CSI500 PIT</strong><i /> <span>{tr("AS OF")}</span><strong>{snapshot.meta.asOf}</strong><i /> <span>{tr("SYNC")}</span><strong>{lastSync ? humanDate(lastSync.toISOString()) : "—"}</strong></div><div className="lang-switch">{[["en", "EN"], ["zh", "中文"], ["dual", "Dual"]].map(([id, label]) => <button key={id} className={lang === id ? "active" : ""} onClick={() => switchLang(id as Lang)}>{label}</button>)}</div><div className="mode-switch"><button className={mode === "research" ? "active" : ""} onClick={() => setMode("research")}>{tr("Research")}</button><button className={mode === "showcase" ? "active" : ""} onClick={() => setMode("showcase")}>{tr("Showcase")}</button></div></header>
         <div className="content">
           {view === "overview" && <Overview snapshot={snapshot} navigate={navigate} openFactor={setFactor} />}
           {view === "factors" && <FactorLibrary snapshot={snapshot} openFactor={setFactor} />}

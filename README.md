@@ -41,7 +41,7 @@ flowchart TD
 
 | 模块 | AI 的职责 | 确定性约束 | 当前状态 |
 |---|---|---|---|
-| QuantaAlpha | 根据经济学假设生成、修正因子表达式 | 数据字段、计算环境、质量门槛和回测 | 8 条价量假设均已运行，因子库已收录 26 个结果 |
+| QuantaAlpha | 根据经济学假设生成、修正因子表达式 | 数据字段、计算环境、质量门槛和回测 | 首批8条价量假设完成；第二批8条 factors.directory 热启动任务运行中 |
 | Factor Council | 多角色评审统计证据、市场状态和数据质量 | PIT、覆盖率、候选集合和 fallback | 已完成真实 DeepSeek 调用 |
 | 财报 AI | 从财报提取展望、需求、利润率、投资和不确定性评分 | 页码引用、公告日、空值和分数范围 | 2020–2025 六年批量解析、评分和下游回测已完成 |
 | 收益预测 | walk-forward 横截面预测 | 标签成熟、训练截止日和固定模型接口 | Ridge 已接入真实数据链路 |
@@ -67,12 +67,14 @@ Factor Council 和 Portfolio Council 都提供两种明确分离的模式：
 | 已物化财务因子 | 28,266 行 / 351 只 | 需要用最新 747 只原始数据重新构建 |
 | 市值/估值/三表补充 | 已按用户要求暂停 | 行情优先；后续恢复时继续断点下载 |
 | 行业快照 | 627/628 只 | 使用当前快照，不声称历史 PIT 行业分类 |
-| Unified Factor Library | 42 个因子 | 6 个确定性价量、26 个 QuantaAlpha、2 个财务、3 个烟雾财报文本、5 个正式财报 AI 因子 |
+| Unified Factor Library | 54 个因子 | 原42个因子之外，新增 Beta、Momentum、Residual Volatility、Liquidity 各3个确定性风格因子 |
 | Factor Council | 已接入 | 最新 showcase 选择低波动、A01/A03 和全部五个财报 AI 因子 |
 | Portfolio Council | 已接入 | 最新 showcase 选择 `defensive`，并对 3 个行业超配、3 个行业低配 |
 | 组合优化与回测 | 已接入 | 最新财报链回放完成 128 次预测/优化；年化 -0.98%、Sharpe -0.13、最大回撤 -13.10% |
 
 五个财报 AI 因子的全期 CSI500 覆盖率约为 42.6%–42.8%，低于正式研究政策的 75% 门槛。因此它们在主 Catalog 中仍是 `candidate`；课程演示使用独立的低覆盖 `showcase_reenactment` 政策，并保留固定 hindsight disclosure，不能据此声称真实样本外有效。
+
+新增的12个市场型风格因子不使用 `risk_` 前缀，统一分为 `style_beta`、`style_momentum`、`style_residual_volatility` 和 `style_liquidity`。它们已通过覆盖率与成熟观测门槛，但预测价值仍需 Council 根据 IC、方向、冗余和机制逐组判断。Profitability 与 Growth 因子仍等待 PIT 三表补齐。
 
 计划中的下一批候选因子按六个普通因子族组织，不使用 `risk_` 前缀：
 
@@ -248,9 +250,20 @@ Council 使用三个 Reviewer 和一个 Chair。模型输出必须符合 Pydanti
 ## Aster Research Console
 
 交互式前端位于 `apps/aster-console`，提供流程总览、因子库、因子详情、
-AI Council、六年财报智能和组合回放页面。实时模式由只读 FastAPI 服务
-聚合本地任务状态，通过 SSE 通知与 15 秒轮询自动刷新；API 不提供任务写入
-端点，也不会暴露 API Key、原始 PDF、大型 Parquet、日志路径或本机绝对路径。
+AI Council、六年财报智能和组合回放页面。实时模式由 FastAPI 服务聚合本地任务状态，
+通过 SSE 通知与 15 秒轮询自动刷新。Portfolio Replay 另提供有边界的 Human-in-the-loop
+流程：同一个 Unified Council 固定按季度运行两套顺序 Prompt。Factor Agenda 先给出因子池，
+Portfolio Agenda 再读取该结论和共享证据，选择受限的 beta 档位与行业倾斜。人可以最多复议
+三轮；每次复议都会按顺序重跑两套 Prompt，接受后同时生成 factor schedule 和 portfolio
+schedule，再异步运行真实回测。组合信号与调仓仍为每 5 个交易日一次。
+自动模式也使用相同的季度节点，只是自动接受各季度初始结论并一次性运行完整 schedule。
+接受的轮次、人工指令、模型调用、约束校验和产物摘要全部写入本地审计目录。
+API 不会向浏览器暴露 API Key、原始 PDF、大型 Parquet、日志路径或本机绝对路径。
+
+每个季度 Council 在结构化决策前调用 DeepSeek Search API。Research 模式只允许决策截止日
+以前、最近 365 天且相关度达标的网页证据；Showcase 模式保留明确的事后披露。搜索来源、
+拒绝原因、内容哈希和引用 ID 均保存到会话审计目录。详见
+[docs/council_web_research_v1.md](docs/council_web_research_v1.md)。
 
 ```powershell
 # 首次启动会安装 requirements-console.txt 并构建前端
@@ -305,6 +318,13 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run_portfolio_full_chain_smok
 ```
 
 Portfolio Council 只能选择 `defensive`、`balanced`、`opportunistic`。股票权重、IC 对冲、换手、Beta、总敞口、保证金和成本仍由确定性代码控制。详见 [docs/portfolio_backtest_and_ai_council_v1.md](docs/portfolio_backtest_and_ai_council_v1.md)。
+
+季度 Replay 的双 Prompt 串联、人工接受边界和审计产物见
+[docs/unified_council_two_prompt_v1.md](docs/unified_council_two_prompt_v1.md)。
+
+回测已使用预构建 NumPy 特征矩阵、向量化 Beta 估计和免重复特征分解的收缩协方差实现。
+本机真实数据短窗口从约 80 秒降至约 38 秒，指标仅有浮点尾差；详见
+[docs/backtest_performance_v1.md](docs/backtest_performance_v1.md)。
 
 ## 测试
 

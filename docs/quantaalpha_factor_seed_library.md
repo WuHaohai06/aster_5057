@@ -51,6 +51,12 @@ CSI500 PIT 股票池中重新生成数值、评估 Rank IC、稳定性、换手�
 - 因此 Beta、Momentum、Residual Volatility 以及两个不依赖股本的 Liquidity
   假设可以真实计算。
 
+截至2026-11-26，上述市场可运行部分已由
+`src/aster_data/style_factors.py` 确定性实现：Beta、Momentum、Residual
+Volatility、Liquidity 各3个，共12个因子。使用
+`scripts/build_style_factors.py` 重新物化，随后通过统一 Catalog evaluator
+计算覆盖率、Rank IC、换手和冗余。因子 ID 不使用 `risk_` 前缀。
+
 ### 数据补齐后运行
 
 - `float_shares`、`float_market_cap` 完成后运行市值中性化换手率；
@@ -70,6 +76,18 @@ Factors Directory 用作人工发现页面，例如排序动量、现金转化�
 
 - https://factors.directory/zh
 - https://factors.directory/zh/terms
+
+## 第二批 QuantaAlpha 价量热启动
+
+`config/quantaalpha/factors_directory_price_volume_v2.json` 记录8条独立任务：
+排序动量、动量加速度、隔夜/日内再评估、MFI、PVT、VR、ROC量能确认和
+日频路径非流动性。外部页面只用于发现假设；实现、数值和评估全部在本地
+CSI500 PIT 数据上重新生成。后台入口：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start_factors_directory_mining_batch.ps1 `
+  -StepN 5 -Model deepseek-flash
+```
 
 ## 推荐执行顺序
 

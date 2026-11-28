@@ -128,6 +128,22 @@ snapshot schema is served by the read-only endpoint and the static fallback.
 - No task-control endpoints and no secrets in the browser.
 - Optional Cloudflare tunnel launcher; access control remains at the tunnel edge.
 
+### Phase 4 — Human-in-the-loop replay (implemented)
+
+- Unified Council nodes use a quarterly cadence with two sequential prompts:
+  Factor Agenda first, Portfolio Agenda second. Both share one accepted round;
+  portfolio signals and rebalancing remain every five trading sessions.
+- The 2022-2026 replay contains 20 quarterly decision nodes, presented as an interactive timeline.
+- A human may provide a bounded instruction and request up to three reconsideration rounds.
+- Candidate membership, group-count, baseline and evidence-ID constraints remain code-enforced.
+- Accepting a valid round makes it immutable and writes an audited factor schedule.
+- The schedule switches the actual Ridge feature subset by signal date; it is not a UI-only annotation.
+- Segment computation runs asynchronously and the saved daily curve can be played or paused in the UI.
+- Research and retrospective showcase disclosures remain visible throughout the interaction.
+- Replay sessions and model call records stay under `run/aster_console/replay_sessions`.
+- Automatic mode uses the same quarterly schedule and auto-accepts each initial proposal before one full replay.
+- Quarters without newly materialised evidence are explicitly marked `carry_forward` rather than being presented as fresh PIT evidence.
+
 ## Acceptance criteria for Phase 1
 
 - Production build succeeds from a clean dependency install.

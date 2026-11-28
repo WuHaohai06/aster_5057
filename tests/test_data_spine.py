@@ -117,6 +117,8 @@ class DataSpineTest(unittest.TestCase):
             [0.0005 * ((index % 7) - 3) for index in range(80)], index=dates
         )
         result = estimate_risk(stocks, benchmark, window=80, minimum_observations=60)
+        expected_beta = stocks["full"].cov(benchmark) / benchmark.var(ddof=1)
+        self.assertAlmostEqual(result.betas["full"], expected_beta, places=12)
         self.assertEqual(result.betas["short"], 1.0)
         self.assertIn("short", result.imputed_assets)
         self.assertGreater(

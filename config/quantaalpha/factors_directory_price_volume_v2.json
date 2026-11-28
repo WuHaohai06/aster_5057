@@ -1,0 +1,55 @@
+{
+  "version": "aster-factors-directory-pv-v2",
+  "source_policy": "Factors Directory is used only for hypothesis discovery. Every implementation and result must be regenerated and evaluated on the PIT CSI500 dataset.",
+  "common_constraints": "Use only PIT-safe adjusted daily open, high, low, close, volume and return fields. Do not use minute data, auction data, order-size data, current static constituents, future values or cross-stock raw share-volume comparisons. Normalize volume against the same stock's trailing history. Preserve the source hypothesis, economic mechanism, expected sign, holding horizon, falsification condition and failure regimes. Prefer one interpretable expression per run and test whether the opposite sign is more consistent with the data.",
+  "jobs": [
+    {
+      "id": "FD01",
+      "name": "rank_momentum_persistence",
+      "source_url": "https://factors.directory/zh/factors/momentum/momentum-based-on-ranking",
+      "prompt": "Adapt the Factors Directory ranking-based momentum hypothesis to daily PIT CSI500 data. Aggregate each stock's daily cross-sectional return ranks over 60-120 sessions and skip the most recent 5-20 sessions. Test whether rank aggregation is more robust than raw cumulative return and reject the hypothesis if it depends on a few limit-up observations."
+    },
+    {
+      "id": "FD02",
+      "name": "momentum_acceleration",
+      "source_url": "https://factors.directory/zh/factors/momentum/momentum-acceleration",
+      "prompt": "Adapt the Factors Directory momentum-acceleration hypothesis. Compare recent 60-120 session return momentum with the preceding equal-length window, optionally requiring persistent own-history volume confirmation. Distinguish acceleration from ordinary momentum and falsify if the signal is only short-term reversal or a single jump."
+    },
+    {
+      "id": "FD03",
+      "name": "intraday_overnight_reassessment",
+      "source_url": "https://factors.directory/zh/factors/momentum/industry-momentum",
+      "prompt": "Adapt the Factors Directory intraday-versus-overnight momentum decomposition from industries to individual CSI500 stocks. Compute overnight return from prior close to open and intraday return from open to close; study persistent disagreement and own-history volume confirmation. Test the hypothesis that volume-confirmed intraday direction contains more reliable reassessment information than the opening gap."
+    },
+    {
+      "id": "FD04",
+      "name": "money_flow_extremes",
+      "source_url": "https://factors.directory/zh/factors/tech/money-flow-index",
+      "prompt": "Adapt the Factors Directory Money Flow Index using typical price and daily volume over 10-20 sessions. Treat moderate positive money flow as confirmation but test whether extreme MFI is overbought or oversold and reverses over 1-5 sessions. Normalize inputs within each stock and reject any formula dominated by price level or raw volume scale."
+    },
+    {
+      "id": "FD05",
+      "name": "normalized_price_volume_trend",
+      "source_url": "https://factors.directory/en/factors/tech/price-volume-trend",
+      "prompt": "Adapt the Factors Directory Price Volume Trend concept without accumulating raw cross-stock volume. Weight daily return by volume standardized against the same stock's trailing 60-session history, then measure the 10-20 session trend. Test confirmation and divergence variants and falsify if the result duplicates ordinary momentum."
+    },
+    {
+      "id": "FD06",
+      "name": "volume_ratio_non_linearity",
+      "source_url": "https://factors.directory/zh/factors/tech/volume-ratio-indicator",
+      "prompt": "Adapt the Factors Directory Volume Ratio indicator: compare own-stock volume on up days with volume on down days over 10-20 sessions. Test both trend confirmation and nonlinear overbought or oversold reversal at extremes. Use stable ratios with denominator protection and reject the mechanism if it is redundant with cumulative return."
+    },
+    {
+      "id": "FD07",
+      "name": "roc_volume_confirmation",
+      "source_url": "https://factors.directory/zh/factors/tech/rate-of-change",
+      "prompt": "Adapt the Factors Directory Rate of Change and smoothed ROC hypothesis, adding only own-history volume confirmation. Compare 10-20 session ROC with a short moving average and penalize single-day volume spikes. Test whether volume-confirmed ROC continues while unconfirmed extreme ROC reverses."
+    },
+    {
+      "id": "FD08",
+      "name": "daily_path_illiquidity",
+      "source_url": "https://factors.directory/zh/factors/liquidity/illiquidity",
+      "prompt": "Create a daily-data approximation to the Factors Directory path-length illiquidity hypothesis. Use scale-free intraday path length 2*(high-low)-abs(close-open), divided by prior close, and scale it by volume relative to the same stock's history instead of unavailable minute amount. Test whether high path length on weak relative volume predicts reversal or a liquidity premium, with the two horizons kept separate."
+    }
+  ]
+}

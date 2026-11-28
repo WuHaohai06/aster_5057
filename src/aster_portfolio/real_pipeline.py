@@ -18,7 +18,7 @@ from .backtest import PortfolioBacktester
 from .council import PortfolioCouncilDecision
 from .factors import compute_price_volume_factors
 from .forecaster import WalkForwardRidgeForecaster
-from .schemas import default_profiles
+from .schemas import approved_profiles, default_profiles
 
 
 DEFAULT_GROUPS = [
@@ -65,7 +65,7 @@ def _selected_profile(
     decision = PortfolioCouncilDecision.model_validate_json(raw)
     if pd.Timestamp(decision.input_cutoff) > replay_end:
         raise ValueError("Portfolio Council decision contains information after replay end")
-    if decision.selected_profile_id not in default_profiles():
+    if decision.selected_profile_id not in approved_profiles():
         raise ValueError("Portfolio Council selected an unknown approved profile")
     if decision.uses_hindsight:
         effective_start = pd.Timestamp(decision.showcase_future_window_start)
@@ -101,24 +101,26 @@ def _resolve_factor_features(
     project_root: Path,
     dates: pd.DatetimeIndex,
     instruments: list[str],
-) -> tuple[dict[str, pd.DataFrame], dict | None]:
+) -> tuple[dict[str, pd.DataFrame], dict | None, dict[str, list[str]]]:
     features: dict[str, pd.DataFrame] = {}
+    feature_ids_by_group: dict[str, list[str]] = {}
     external_groups = []
     for group in groups:
         if group in builtins:
             features[group] = builtins[group]
+            feature_ids_by_group[group] = [group]
         else:
             external_groups.append(group)
     if not external_groups:
         if catalog_path is None:
-            return features, None
+            return features, None, feature_ids_by_group
         catalog = load_catalog(catalog_path)
         return features, {
             "path": str(catalog_path.resolve()),
             "sha256": sha256_file(catalog_path),
             "catalog_digest": catalog.catalog_digest,
             "external_factor_ids": [],
-        }
+        }, feature_ids_by_group
     if catalog_path is None:
         raise ValueError(f"factor groups require a catalog: {sorted(external_groups)}")
     catalog = load_catalog(catalog_path)
@@ -155,12 +157,130 @@ def _resolve_factor_features(
             )
             features[record.factor_id] = panel
             external_ids.append(record.factor_id)
+            feature_ids_by_group.setdefault(group, []).append(record.factor_id)
     return features, {
         "path": str(catalog_path.resolve()),
         "sha256": sha256_file(catalog_path),
         "catalog_digest": catalog.catalog_digest,
         "external_factor_ids": external_ids,
+    }, feature_ids_by_group
+
+
+def _load_factor_schedule(path: Path | None) -> tuple[list[dict], dict | None]:
+    if path is None:
+        return [], None
+    raw = path.read_bytes()
+    payload = json.loads(raw)
+    if payload.get("schema") != "aster-factor-schedule-v1":
+        raise ValueError("unknown factor schedule schema")
+    entries = payload.get("entries")
+    if not isinstance(entries, list) or not entries:
+        raise ValueError("factor schedule must contain at least one entry")
+    normalised = []
+    for item in entries:
+        selected = item.get("selected_groups")
+        if not isinstance(selected, list) or not selected or len(selected) != len(set(selected)):
+            raise ValueError("each factor schedule entry needs unique selected_groups")
+        effective_from = pd.Timestamp(item["effective_from"]).normalize()
+        effective_to = (
+            pd.Timestamp(item["effective_to"]).normalize() if item.get("effective_to") else None
+        )
+        input_cutoff = pd.Timestamp(item["input_cutoff"]).normalize()
+        if input_cutoff >= effective_from and not item.get("uses_hindsight", False):
+            raise ValueError("research schedule input_cutoff must precede effective_from")
+        if effective_to is not None and effective_to < effective_from:
+            raise ValueError("factor schedule effective_to precedes effective_from")
+        normalised.append({
+            **item,
+            "effective_from": effective_from,
+            "effective_to": effective_to,
+            "input_cutoff": input_cutoff,
+        })
+    normalised.sort(key=lambda item: item["effective_from"])
+    return normalised, {
+        "path": str(path.resolve()),
+        "sha256": hashlib.sha256(raw).hexdigest(),
+        "schema": payload["schema"],
+        "session_id": payload.get("session_id"),
     }
+
+
+def _groups_for_signal(signal_date: pd.Timestamp, schedule: list[dict]) -> list[str]:
+    selected = DEFAULT_GROUPS
+    for entry in schedule:
+        if signal_date < entry["effective_from"]:
+            continue
+        if entry["effective_to"] is not None and signal_date > entry["effective_to"]:
+            continue
+        selected = entry["selected_groups"]
+    return selected
+
+
+def _load_portfolio_schedule(path: Path | None) -> tuple[list[dict], dict | None]:
+    if path is None:
+        return [], None
+    raw = path.read_bytes()
+    payload = json.loads(raw)
+    if payload.get("schema") != "aster-portfolio-schedule-v1":
+        raise ValueError("unknown portfolio schedule schema")
+    entries = payload.get("entries")
+    if not isinstance(entries, list) or not entries:
+        raise ValueError("portfolio schedule must contain at least one entry")
+    approved = approved_profiles()
+    normalised = []
+    for item in entries:
+        profile_id = item.get("selected_profile_id")
+        if profile_id not in approved:
+            raise ValueError("portfolio schedule selected an unknown approved profile")
+        effective_from = pd.Timestamp(item["effective_from"]).normalize()
+        effective_to = (
+            pd.Timestamp(item["effective_to"]).normalize() if item.get("effective_to") else None
+        )
+        input_cutoff = pd.Timestamp(item["input_cutoff"]).normalize()
+        if input_cutoff >= effective_from and not item.get("uses_hindsight", False):
+            raise ValueError("research portfolio input_cutoff must precede effective_from")
+        if effective_to is not None and effective_to < effective_from:
+            raise ValueError("portfolio schedule effective_to precedes effective_from")
+        overweights = item.get("industry_overweights", [])
+        underweights = item.get("industry_underweights", [])
+        active_tilt = float(item.get("industry_active_tilt", 0.0))
+        if not isinstance(overweights, list) or not isinstance(underweights, list):
+            raise ValueError("portfolio industry selections must be lists")
+        if len(overweights) > 3 or len(underweights) > 3:
+            raise ValueError("portfolio schedule allows at most three industries per side")
+        if set(overweights).intersection(underweights):
+            raise ValueError("an industry cannot be both overweight and underweight")
+        if active_tilt not in {0.0, 0.05, 0.08, 0.10, 0.15, 0.20}:
+            raise ValueError("portfolio schedule active tilt is not an approved level")
+        if (overweights or underweights) and active_tilt == 0.0:
+            raise ValueError("portfolio industry selections require a positive active tilt")
+        normalised.append({
+            **item,
+            "effective_from": effective_from,
+            "effective_to": effective_to,
+            "input_cutoff": input_cutoff,
+            "industry_overweights": overweights,
+            "industry_underweights": underweights,
+            "industry_active_tilt": active_tilt,
+        })
+    normalised.sort(key=lambda item: item["effective_from"])
+    return normalised, {
+        "path": str(path.resolve()),
+        "sha256": hashlib.sha256(raw).hexdigest(),
+        "schema": payload["schema"],
+        "session_id": payload.get("session_id"),
+    }
+
+
+def _portfolio_policy_for_signal(signal_date: pd.Timestamp, schedule: list[dict]) -> dict | None:
+    selected = None
+    for entry in schedule:
+        if signal_date < entry["effective_from"]:
+            continue
+        if entry["effective_to"] is not None and signal_date > entry["effective_to"]:
+            continue
+        selected = entry
+    return selected
 
 
 def run_real_pipeline(
@@ -171,7 +291,9 @@ def run_real_pipeline(
     start: str,
     end: str,
     factor_decision_path: Path | None = None,
+    factor_schedule_path: Path | None = None,
     portfolio_decision_path: Path | None = None,
+    portfolio_schedule_path: Path | None = None,
     factor_catalog_path: Path | None = None,
     industry_snapshot_path: Path | None = None,
     industry_benchmark_path: Path | None = None,
@@ -237,14 +359,21 @@ def run_real_pipeline(
     )
     benchmark = benchmark.reindex(common)
     futures_close = futures["nav_index"].reindex(common)
-    groups, factor_link = _selected_groups(
-        factor_decision_path, replay_start=pd.Timestamp(start)
-    )
+    if factor_decision_path is not None and factor_schedule_path is not None:
+        raise ValueError("use factor_decision_path or factor_schedule_path, not both")
+    schedule, factor_schedule_link = _load_factor_schedule(factor_schedule_path)
+    groups, factor_link = _selected_groups(factor_decision_path, replay_start=pd.Timestamp(start))
+    if schedule:
+        groups = sorted(
+            set(DEFAULT_GROUPS).union(
+                group for entry in schedule for group in entry["selected_groups"]
+            )
+        )
     factors = compute_price_volume_factors(
         close=close, high=high, low=low, volume=volume
     )
     project_root = Path(__file__).resolve().parents[2]
-    feature_panels, factor_catalog_link = _resolve_factor_features(
+    feature_panels, factor_catalog_link, feature_ids_by_group = _resolve_factor_features(
         groups=groups,
         builtins=factors,
         catalog_path=factor_catalog_path,
@@ -254,6 +383,16 @@ def run_real_pipeline(
     )
     first_signal = training_sessions + horizon_days
     signal_dates = list(common[first_signal : -horizon_days : rebalance_every])
+    feature_names_by_signal = None
+    if schedule:
+        feature_names_by_signal = {
+            signal_date: [
+                feature_id
+                for group in _groups_for_signal(signal_date, schedule)
+                for feature_id in feature_ids_by_group[group]
+            ]
+            for signal_date in signal_dates
+        }
     forecasts = WalkForwardRidgeForecaster(
         horizon_days=horizon_days,
         training_sessions=training_sessions,
@@ -264,6 +403,12 @@ def run_real_pipeline(
         close=close,
         signal_dates=signal_dates,
         eligibility=eligibility,
+        feature_names_by_signal=feature_names_by_signal,
+    )
+    if portfolio_decision_path is not None and portfolio_schedule_path is not None:
+        raise ValueError("use portfolio_decision_path or portfolio_schedule_path, not both")
+    portfolio_schedule, portfolio_schedule_link = _load_portfolio_schedule(
+        portfolio_schedule_path
     )
     default_profile_id, selected_profile_id, effective_start, effective_end, portfolio_link = _selected_profile(
         portfolio_decision_path,
@@ -274,8 +419,44 @@ def run_real_pipeline(
     industry_policy_by_signal: dict[pd.Timestamp, dict] = {}
     industries = None
     industry_benchmark_weights = None
-    if effective_start is not None:
-        selected_profile = default_profiles()[selected_profile_id]
+    if portfolio_schedule:
+        default_profile_id = "balanced"
+        selected_profile_id = portfolio_schedule[-1]["selected_profile_id"]
+        profile_by_signal = {
+            signal_date: approved_profiles()[policy["selected_profile_id"]]
+            for signal_date in forecasts.forecasts
+            if (policy := _portfolio_policy_for_signal(signal_date, portfolio_schedule))
+            is not None
+        }
+        industry_policy_by_signal = {
+            signal_date: {
+                "overweights": policy["industry_overweights"],
+                "underweights": policy["industry_underweights"],
+                "active_tilt": policy["industry_active_tilt"],
+            }
+            for signal_date in forecasts.forecasts
+            if (policy := _portfolio_policy_for_signal(signal_date, portfolio_schedule))
+            is not None
+            and policy["industry_active_tilt"] > 0.0
+        }
+        if industry_policy_by_signal:
+            if industry_snapshot_path is None or industry_benchmark_path is None:
+                raise ValueError("industry Council schedule requires snapshot and benchmark inputs")
+            snapshot = pd.read_parquet(industry_snapshot_path)
+            industries = snapshot.set_index("instrument")["industry_name"].reindex(instruments)
+            benchmark_industry = pd.read_parquet(industry_benchmark_path)
+            benchmark_industry["date"] = pd.to_datetime(
+                benchmark_industry["date"]
+            ).dt.normalize()
+            industry_benchmark_weights = (
+                benchmark_industry.pivot(
+                    index="date", columns="industry_name", values="benchmark_weight"
+                )
+                .sort_index()
+                .fillna(0.0)
+            )
+    elif effective_start is not None:
+        selected_profile = approved_profiles()[selected_profile_id]
         profile_by_signal = {
             signal_date: selected_profile
             for signal_date in forecasts.forecasts
@@ -313,7 +494,7 @@ def run_real_pipeline(
         benchmark_close=benchmark,
         futures_close=futures_close,
         forecasts=forecasts.forecasts,
-        default_profile=default_profiles()[default_profile_id],
+        default_profile=approved_profiles()[default_profile_id],
         profile_by_signal=profile_by_signal,
         industries=industries,
         industry_benchmark_weights=industry_benchmark_weights,
@@ -366,8 +547,34 @@ def run_real_pipeline(
         "forecasts": len(forecasts.forecasts),
         "optimizations": len(result.optimizations),
         "factor_council": factor_link,
+        "factor_schedule": factor_schedule_link,
+        "factor_schedule_entries": [
+            {
+                **entry,
+                "effective_from": entry["effective_from"].date().isoformat(),
+                "effective_to": (
+                    entry["effective_to"].date().isoformat()
+                    if entry["effective_to"] is not None else None
+                ),
+                "input_cutoff": entry["input_cutoff"].date().isoformat(),
+            }
+            for entry in schedule
+        ],
         "factor_catalog": factor_catalog_link,
         "portfolio_council": portfolio_link,
+        "portfolio_schedule": portfolio_schedule_link,
+        "portfolio_schedule_entries": [
+            {
+                **entry,
+                "effective_from": entry["effective_from"].date().isoformat(),
+                "effective_to": (
+                    entry["effective_to"].date().isoformat()
+                    if entry["effective_to"] is not None else None
+                ),
+                "input_cutoff": entry["input_cutoff"].date().isoformat(),
+            }
+            for entry in portfolio_schedule
+        ],
         "inputs": {
             "market": {"path": str(market_path.resolve()), "sha256": sha256_file(market_path)},
             "ic_futures": {
@@ -401,7 +608,9 @@ def main() -> None:
     parser.add_argument("--start", required=True)
     parser.add_argument("--end", required=True)
     parser.add_argument("--factor-decision", type=Path)
+    parser.add_argument("--factor-schedule", type=Path)
     parser.add_argument("--portfolio-decision", type=Path)
+    parser.add_argument("--portfolio-schedule", type=Path)
     parser.add_argument("--factor-catalog", type=Path)
     parser.add_argument("--industry-snapshot", type=Path)
     parser.add_argument("--industry-benchmark", type=Path)
@@ -417,7 +626,9 @@ def main() -> None:
         start=args.start,
         end=args.end,
         factor_decision_path=args.factor_decision,
+        factor_schedule_path=args.factor_schedule,
         portfolio_decision_path=args.portfolio_decision,
+        portfolio_schedule_path=args.portfolio_schedule,
         factor_catalog_path=args.factor_catalog,
         industry_snapshot_path=args.industry_snapshot,
         industry_benchmark_path=args.industry_benchmark,

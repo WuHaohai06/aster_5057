@@ -44,7 +44,10 @@ def validate_ballot(
 
 
 def validate_recommendation(
-    packet: DecisionPacket, recommendation: ChairRecommendation
+    packet: DecisionPacket,
+    recommendation: ChairRecommendation,
+    *,
+    extra_evidence_ids: set[str] | None = None,
 ) -> list[str]:
     errors: list[str] = []
     candidates = {group.group_id for group in packet.factor_groups}
@@ -66,7 +69,8 @@ def validate_recommendation(
     required = set(constraints.required_at_least_one_from)
     if required and not required.intersection(selected):
         errors.append("selection does not retain a required baseline group")
-    unknown_evidence = set(recommendation.evidence_ids).difference(packet.evidence_ids)
+    allowed_evidence = set(packet.evidence_ids).union(extra_evidence_ids or set())
+    unknown_evidence = set(recommendation.evidence_ids).difference(allowed_evidence)
     if unknown_evidence:
         errors.append(f"chair cites unknown evidence: {sorted(unknown_evidence)}")
     if recommendation.use_fallback and set(selected) != set(constraints.fallback_groups):

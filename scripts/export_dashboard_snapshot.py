@@ -8,11 +8,33 @@ import hashlib
 import json
 import re
 from datetime import datetime
+
+import pandas as pd
 from pathlib import Path
 from typing import Any
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+_BENCHMARK_CLOSES: pd.Series | None = None
+
+
+def benchmark_closes() -> pd.Series:
+    """CSI 500 close series, cached for the lifetime of one exporter process."""
+    global _BENCHMARK_CLOSES
+    if _BENCHMARK_CLOSES is None:
+        market = pd.read_parquet(
+            PROJECT_ROOT / "data/curated/market/daily.parquet",
+            columns=["date", "instrument", "close"],
+        )
+        series = (
+            market.loc[market["instrument"] == "SH000905", ["date", "close"]]
+            .drop_duplicates("date", keep="last")
+            .set_index("date")["close"]
+            .sort_index()
+        )
+        series.index = pd.to_datetime(series.index)
+        _BENCHMARK_CLOSES = series
+    return _BENCHMARK_CLOSES
 
 
 def load_json(path: Path, default: Any = None) -> Any:
@@ -105,7 +127,13 @@ def filing_snapshot(years: range = range(2020, 2026)) -> dict[str, Any]:
 def quanta_factor_rows(existing: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Expose newly mined price-volume factors as candidates before promotion."""
     root = PROJECT_ROOT / "vendor/quantaalpha-b7ceb27/data/factorlib"
-    paths = sorted(root.glob("all_factors_library_aster_pv_*.json"), key=lambda path: path.stat().st_mtime)
+    paths = sorted(
+        [
+            *root.glob("all_factors_library_aster_pv_*.json"),
+            *root.glob("all_factors_library_aster_fd_*.json"),
+        ],
+        key=lambda path: path.stat().st_mtime,
+    )
     paths = [path for path in paths if "smoke" not in path.name]
     known_ids = {str(item.get("id")) for item in existing}
     known_names = {str(item.get("name")) for item in existing}
@@ -113,7 +141,14 @@ def quanta_factor_rows(existing: list[dict[str, Any]]) -> list[dict[str, Any]]:
     for path in paths:
         payload = load_json(path, {}) or {}
         match = re.search(r"aster_pv_([ab]\d{2})", path.name, re.IGNORECASE)
-        group = f"PV-{match.group(1).upper()}" if match else "price_volume"
+        directory_match = re.search(r"aster_fd_(fd\d{2})", path.name, re.IGNORECASE)
+        group = (
+            f"PV-{match.group(1).upper()}"
+            if match
+            else f"FD-{directory_match.group(1).upper()}"
+            if directory_match
+            else "price_volume"
+        )
         for raw in (payload.get("factors") or {}).values():
             factor_id = str(raw.get("factor_id") or "")
             name = str(raw.get("factor_name") or factor_id)
@@ -171,7 +206,9 @@ def quanta_factor_rows(existing: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def factor_mining_snapshot() -> dict[str, Any]:
     root = PROJECT_ROOT / "vendor/quantaalpha-b7ceb27/data/factorlib"
     paths = [
-        path for path in root.glob("all_factors_library_aster_pv_*.json")
+        path
+        for pattern in ("all_factors_library_aster_pv_*.json", "all_factors_library_aster_fd_*.json")
+        for path in root.glob(pattern)
         if "smoke" not in path.name
     ]
     directions: set[str] = set()
@@ -180,13 +217,16 @@ def factor_mining_snapshot() -> dict[str, Any]:
         match = re.search(r"aster_pv_([ab]\d{2})", path.name, re.IGNORECASE)
         if match:
             directions.add(match.group(1).upper())
+        directory_match = re.search(r"aster_fd_(fd\d{2})", path.name, re.IGNORECASE)
+        if directory_match:
+            directions.add(directory_match.group(1).upper())
         payload = load_json(path, {}) or {}
         factors += len(payload.get("factors") or {})
     return {
         "name": "QuantaAlpha price-volume mining",
-        "state": "complete" if len(directions) >= 8 else "running" if directions else "pending",
+        "state": "complete" if len(directions) >= 16 else "running" if directions else "pending",
         "completed": len(directions),
-        "total": 8,
+        "total": 16,
         "factor_count": factors,
         "factor_ids": sorted(directions),
         "updated_at": (
@@ -238,6 +278,15 @@ def factor_rows(catalog: dict[str, Any]) -> list[dict[str, Any]]:
                 "digest": str(artifact.get("sha256", ""))[:12],
             },
         })
+    translations = load_json(PROJECT_ROOT / "data/console/factor_translations.json", {}) or {}
+    for row in rows:
+        translated = translations.get(str(row.get("id")))
+        if translated:
+            row["descriptionZh"] = translated.get("description_zh")
+            row["hypothesisZh"] = translated.get("hypothesis_zh")
+            row["mechanismZh"] = translated.get("mechanism_zh")
+            row["expectedDirectionZh"] = translated.get("expected_direction_zh")
+            row["falsificationCriteriaZh"] = translated.get("falsification_criteria_zh")
     return rows
 
 
@@ -269,7 +318,9 @@ def council_snapshot() -> dict[str, Any]:
             ballots.append({
                 "role": ballot.get("role", path.stem),
                 "summary": ballot.get("summary", ""),
+                "summaryZh": ballot.get("summary_zh"),
                 "votes": ballot.get("votes", []),
+                "dissentConditionsZh": ballot.get("dissent_conditions_zh", []),
                 "mechanismReviews": ballot.get("mechanism_reviews", []),
                 "dissentConditions": ballot.get("dissent_conditions", []),
             })
@@ -286,9 +337,13 @@ def council_snapshot() -> dict[str, Any]:
                 {
                     "factorId": factor.get("factor_id"),
                     "hypothesis": factor.get("economic_hypothesis", ""),
+                    "hypothesisZh": factor.get("economic_hypothesis_zh"),
                     "mechanism": factor.get("mechanism_explanation", ""),
+                    "mechanismZh": factor.get("mechanism_explanation_zh"),
                     "expectedDirection": factor.get("expected_direction", ""),
+                    "expectedDirectionZh": factor.get("expected_direction_zh"),
                     "falsificationCriteria": factor.get("falsification_criteria", []),
+                    "falsificationCriteriaZh": factor.get("falsification_criteria_zh", []),
                 }
                 for factor in group.get("factors", [])
             ],
@@ -307,6 +362,7 @@ def council_snapshot() -> dict[str, Any]:
             "selectedGroups": decision.get("selected_groups", []),
             "disabledGroups": decision.get("disabled_groups", []),
             "rationale": decision.get("rationale", ""),
+            "rationaleZh": decision.get("rationale_zh"),
             "confidence": decision.get("confidence"),
             "fallbackUsed": bool(decision.get("fallback_used")),
             "fallbackReason": decision.get("fallback_reason"),
@@ -322,17 +378,31 @@ def council_snapshot() -> dict[str, Any]:
     }
 
 
-def curve(path: Path, limit: int = 180) -> list[dict[str, Any]]:
+def read_rows(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         return []
     with path.open("r", encoding="utf-8-sig", newline="") as handle:
-        rows = list(csv.DictReader(handle))
+        return list(csv.DictReader(handle))
+
+
+def curve_from_rows(rows: list[dict[str, Any]], limit: int = 180) -> list[dict[str, Any]]:
     if not rows:
         return []
     step = max(1, len(rows) // limit)
     selected = rows[::step]
     if selected[-1] is not rows[-1]:
         selected.append(rows[-1])
+    benchmark_nav: dict[str, float] = {}
+    try:
+        closes = benchmark_closes()
+        base_date = pd.Timestamp(rows[0]["date"])
+        base_close = float(closes.loc[:base_date].iloc[-1])
+        base_nav = float(rows[0].get("nav") or 1.0)
+        for row in selected:
+            day = pd.Timestamp(row["date"])
+            benchmark_nav[row["date"]] = base_nav * float(closes.loc[:day].iloc[-1]) / base_close
+    except Exception:
+        benchmark_nav = {}
     peak = 0.0
     result = []
     for row in selected:
@@ -344,8 +414,91 @@ def curve(path: Path, limit: int = 180) -> list[dict[str, Any]]:
             "drawdown": nav / peak - 1.0 if peak else 0.0,
             "beta": float(row.get("estimated_net_beta") or 0.0),
             "profile": row.get("profile_id") or "unassigned",
+            "benchmarkNav": round(benchmark_nav[row["date"]], 4) if row["date"] in benchmark_nav else None,
         })
     return result
+
+
+def curve(path: Path, limit: int = 180) -> list[dict[str, Any]]:
+    return curve_from_rows(read_rows(path), limit)
+
+
+DEMO_RUNS: list[tuple[str, str, str]] = [
+    (
+        "narrative_monthly_v3",
+        "MONTHLY DEMO · beta 0.2 · tech-crash shorts",
+        "data/portfolio/narrative_demo/narrative_monthly_v3",
+    ),
+    (
+        "narrative_v2",
+        "QUARTERLY DEMO · beta 0.4",
+        "data/portfolio/narrative_demo/narrative_v2",
+    ),
+    (
+        "demo_showcase_v1",
+        "SHOWCASE DEMO · beta +/-0.5",
+        "data/portfolio/demo_showcase/demo_showcase_v1",
+    ),
+]
+
+
+def demo_runs() -> list[dict[str, Any]]:
+    """Disclosed demo curves, normalised to the displayed window."""
+    runs = []
+    for run_id, label, relative in DEMO_RUNS:
+        root = PROJECT_ROOT / relative
+        summary = load_json(root / "summary.json", {}) or {}
+        rows = read_rows(root / "run" / "daily.csv")
+        if not rows or not summary:
+            continue
+        window_start = summary.get("window_start") or rows[0]["date"]
+        rows = [row for row in rows if row["date"] >= window_start]
+        if not rows:
+            continue
+        base_nav = float(rows[0]["nav"])
+        rows = [{**row, "nav": str(float(row["nav"]) / base_nav)} for row in rows]
+        betas = [abs(float(row.get("estimated_net_beta") or 0.0)) for row in rows]
+        gross = [float(row.get("gross_exposure") or 0.0) for row in rows]
+        costs = [float(row.get("cost_fraction") or 0.0) for row in rows]
+        stock_turn = [float(row.get("stock_turnover") or 0.0) for row in rows]
+        futures_turn = [float(row.get("futures_turnover") or 0.0) for row in rows]
+        report_paths = sorted((root / "reports").glob("*.json")) if (root / "reports").exists() else []
+        report = load_json(report_paths[-1], {}) if report_paths else {}
+        positioning = report.get("positioning") or {}
+        runs.append({
+            "id": run_id,
+            "label": label,
+            "source": "demo",
+            "disclosure": summary.get("disclosure"),
+            "report": {
+                "decisionAt": report.get("decision_at"),
+                "effectiveTo": report.get("effective_to"),
+                "profile": positioning.get("profile"),
+                "targetBeta": positioning.get("target_beta"),
+                "memo": report.get("memo"),
+                "memoEn": report.get("memo_en"),
+                "confidence": report.get("confidence"),
+            } if report else None,
+            "metrics": {
+                "annual_return": summary.get("annual_return"),
+                "annual_volatility": summary.get("annual_volatility"),
+                "sharpe": summary.get("sharpe"),
+                "max_drawdown": summary.get("max_drawdown"),
+                "max_abs_estimated_beta": max(betas) if betas else None,
+                "mean_gross_exposure": sum(gross) / len(gross) if gross else None,
+                "total_cost_fraction": sum(costs),
+                "total_stock_turnover": sum(stock_turn),
+                "total_futures_turnover": sum(futures_turn),
+            },
+            "curve": curve_from_rows(rows),
+            "council": {
+                "selectedProfile": None,
+                "overweights": [],
+                "underweights": [],
+                "activeTilt": 0.0,
+            },
+        })
+    return runs
 
 
 def portfolio_snapshot() -> dict[str, Any]:
@@ -355,7 +508,7 @@ def portfolio_snapshot() -> dict[str, Any]:
         key=lambda path: path.stat().st_mtime,
         reverse=True,
     )
-    runs = []
+    runs = demo_runs()
     for path in candidates[:3]:
         manifest = load_json(path / "manifest.json", {}) or {}
         council = manifest.get("portfolio_council") or {}

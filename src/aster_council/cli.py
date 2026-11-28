@@ -39,7 +39,7 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--output-root", type=Path, required=True)
     run.add_argument("--model", default="deepseek-flash")
     run.add_argument("--base-url", default="https://api.deepseek.com")
-    run.add_argument("--max-tokens", type=int, default=6000)
+    run.add_argument("--max-tokens", type=int, default=20000)
     run.add_argument("--static-responses", type=Path)
     return parser
 

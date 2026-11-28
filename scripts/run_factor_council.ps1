@@ -3,7 +3,7 @@ param(
     [string]$OutputRoot = "",
     [string]$Model = "deepseek-flash",
     [string]$BaseUrl = "https://api.deepseek.com",
-    [int]$MaxTokens = 6000
+    [int]$MaxTokens = 20000
 )
 
 $ErrorActionPreference = "Stop"

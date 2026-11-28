@@ -49,13 +49,16 @@ def _extract_json(text: str) -> dict[str, Any]:
 
 
 class DeepSeekCouncilClient:
+    DEFAULT_MAX_TOKENS = 20000
+    RETRY_MAX_TOKENS = 32000
+
     def __init__(
         self,
         *,
         api_key: str | None = None,
         base_url: str | None = None,
         model: str | None = None,
-        max_tokens: int = 6000,
+        max_tokens: int = DEFAULT_MAX_TOKENS,
     ) -> None:
         from openai import OpenAI
 
@@ -68,9 +71,20 @@ class DeepSeekCouncilClient:
         self._client = OpenAI(
             api_key=key,
             base_url=self.base_url,
-            timeout=90.0,
+            timeout=300.0,
             max_retries=1,
         )
+
+    def _request(self, kwargs: dict) -> Any:
+        try:
+            return self._client.chat.completions.create(**kwargs)
+        except Exception as error:
+            # Some OpenAI-compatible deployments reject response_format while
+            # still following an explicit JSON-only prompt.
+            if "response_format" not in str(error).lower():
+                raise
+            kwargs.pop("response_format")
+            return self._client.chat.completions.create(**kwargs)
 
     def complete_json(
         self, *, call_id: str, system_prompt: str, user_prompt: str
@@ -86,17 +100,20 @@ class DeepSeekCouncilClient:
             "stream": False,
             "response_format": {"type": "json_object"},
         }
-        try:
-            response = self._client.chat.completions.create(**kwargs)
-        except Exception as error:
-            # Some OpenAI-compatible deployments reject response_format while
-            # still following an explicit JSON-only prompt.
-            if "response_format" not in str(error).lower():
-                raise
-            kwargs.pop("response_format")
-            response = self._client.chat.completions.create(**kwargs)
+        response = self._request(kwargs)
         message = response.choices[0].message
         text = message.content or ""
+        finish_reason = response.choices[0].finish_reason
+        # Reasoning models spend the output budget on hidden reasoning first.
+        # A long packet can exhaust a small budget before any JSON is emitted,
+        # which used to force an immediate deterministic fallback.  Retry once
+        # with a wider budget instead of silently giving up.
+        if not text and finish_reason == "length" and self.max_tokens < self.RETRY_MAX_TOKENS:
+            kwargs["max_tokens"] = min(self.max_tokens * 2, self.RETRY_MAX_TOKENS)
+            response = self._request(kwargs)
+            message = response.choices[0].message
+            text = message.content or ""
+            finish_reason = response.choices[0].finish_reason
         usage = getattr(response, "usage", None)
         record = LLMCallRecord(
             call_id=call_id,
@@ -105,7 +122,7 @@ class DeepSeekCouncilClient:
             prompt_hash=_prompt_hash(system_prompt, user_prompt),
             input_tokens=getattr(usage, "prompt_tokens", None),
             output_tokens=getattr(usage, "completion_tokens", None),
-            finish_reason=response.choices[0].finish_reason,
+            finish_reason=finish_reason,
         )
         try:
             payload = _extract_json(text)

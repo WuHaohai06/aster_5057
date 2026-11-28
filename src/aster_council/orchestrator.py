@@ -75,11 +75,14 @@ class CouncilOrchestrator:
             f"{json.dumps(ballot_payload, ensure_ascii=False, indent=2)}"
         )
 
-    def _review(self, packet: DecisionPacket, role: ReviewerRole):
+    def _review(self, packet: DecisionPacket, role: ReviewerRole, correction: str = ""):
+        user_prompt = self._reviewer_prompt(packet, role)
+        if correction:
+            user_prompt = f"{user_prompt}\n\n{correction}"
         result = self.client.complete_json(
             call_id=role.value,
             system_prompt=reviewer_system(role, packet.mode),
-            user_prompt=self._reviewer_prompt(packet, role),
+            user_prompt=user_prompt,
         )
         try:
             ballot = ReviewerBallot.model_validate(result.payload)
@@ -159,6 +162,31 @@ class CouncilOrchestrator:
                     failures[role.value] = f"{type(error).__name__}: {error}"
 
         if failures:
+            # A long ballot is occasionally emitted as malformed JSON (trailing
+            # comma / cut object).  Re-ask each failed reviewer once with an
+            # explicit format correction instead of discarding the whole review.
+            correction = (
+                "CORRECTION: the previous response could not be accepted. Return ONE "
+                "complete, valid JSON object matching the schema exactly, with double-quoted "
+                "keys and strings, no trailing commas, no comments and no prose outside the "
+                "JSON object. Do not omit any required group or field; keep each rationale "
+                "concise enough to finish well inside the output budget."
+            )
+            for failed_role in list(failures):
+                try:
+                    _, ballot, record = self._review(
+                        packet, ReviewerRole(failed_role), correction=correction
+                    )
+                    ballots[failed_role] = ballot
+                    calls[f"{failed_role}_retry"] = record
+                    failures.pop(failed_role)
+                except Exception as error:
+                    record = getattr(error, "record", None)
+                    if record is not None:
+                        calls[f"{failed_role}_retry"] = record
+                    failures[failed_role] = f"{type(error).__name__}: {error}"
+
+        if failures:
             decision = self._fallback_decision(
                 packet=packet,
                 now=now,
@@ -178,15 +206,36 @@ class CouncilOrchestrator:
 
         chair_result = None
         validation_errors: list[str] = []
+        chair_user_prompt = self._chair_prompt(packet, ballots)
         try:
             chair_result = self.client.complete_json(
                 call_id="chair",
                 system_prompt=chair_system(packet.mode),
-                user_prompt=self._chair_prompt(packet, ballots),
+                user_prompt=chair_user_prompt,
             )
             calls["chair"] = chair_result.record
             recommendation = ChairRecommendation.model_validate(chair_result.payload)
             validation_errors = validate_recommendation(packet, recommendation)
+            if validation_errors == ["explicit fallback must use exactly the declared fallback_groups"]:
+                # The chair occasionally keeps its discretionary selection and only
+                # mislabels it as fallback.  Re-ask once with the rule spelled out
+                # instead of discarding a valid evidence-based selection.
+                correction = (
+                    "CORRECTION: your previous answer set use_fallback=true while selecting "
+                    "groups beyond the declared fallback_groups "
+                    f"{sorted(packet.constraints.fallback_groups)}. Either keep your selection "
+                    "and set use_fallback=false, or return exactly the fallback pair with "
+                    "use_fallback=true. Return the complete JSON object again."
+                )
+                retry = self.client.complete_json(
+                    call_id="chair_retry",
+                    system_prompt=chair_system(packet.mode),
+                    user_prompt=f"{chair_user_prompt}\n\n{correction}",
+                )
+                calls["chair_retry"] = retry.record
+                recommendation = ChairRecommendation.model_validate(retry.payload)
+                chair_result = retry
+                validation_errors = validate_recommendation(packet, recommendation)
             if validation_errors:
                 raise ValueError("; ".join(validation_errors))
         except Exception as error:

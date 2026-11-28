@@ -107,8 +107,8 @@ class PortfolioOptimizer:
             selected_industries = requested_industries
             if selected_industries and data.industry_active_tilt <= 0.0:
                 raise ValueError("industry selections require a positive active tilt")
-            if data.industry_active_tilt > 0.10 + 1e-12:
-                raise ValueError("industry_active_tilt exceeds the approved 10% limit")
+            if data.industry_active_tilt > 0.20 + 1e-12:
+                raise ValueError("industry_active_tilt exceeds the approved 20% limit")
             for industry in sorted(selected_industries):
                 vector = industries.eq(industry).to_numpy(dtype=float)
                 if not vector.any():

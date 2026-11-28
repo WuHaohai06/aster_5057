@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+import json
 from datetime import date
 from pathlib import Path
 
@@ -16,6 +17,10 @@ from aster_portfolio.council import (
 )
 from aster_portfolio.optimizer import PortfolioOptimizationInput, PortfolioOptimizer
 from aster_portfolio.schemas import default_profiles
+from aster_portfolio.real_pipeline import (
+    _load_portfolio_schedule,
+    _portfolio_policy_for_signal,
+)
 
 
 def portfolio_packet(
@@ -87,6 +92,51 @@ def static_portfolio_responses():
 
 
 class PortfolioInfrastructureTest(unittest.TestCase):
+    def test_quarterly_portfolio_schedule_switches_bounded_policy(self) -> None:
+        payload = {
+            "schema": "aster-portfolio-schedule-v1",
+            "session_id": "test",
+            "entries": [
+                {
+                    "effective_from": "2024-01-01",
+                    "effective_to": "2024-03-31",
+                    "input_cutoff": "2023-12-31",
+                    "selected_profile_id": "defensive",
+                    "industry_overweights": [],
+                    "industry_underweights": [],
+                    "industry_active_tilt": 0.0,
+                    "uses_hindsight": False,
+                },
+                {
+                    "effective_from": "2024-04-01",
+                    "effective_to": "2024-06-30",
+                    "input_cutoff": "2024-03-31",
+                    "selected_profile_id": "opportunistic",
+                    "industry_overweights": ["Technology"],
+                    "industry_underweights": ["Banks"],
+                    "industry_active_tilt": 0.10,
+                    "uses_hindsight": False,
+                },
+            ],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "portfolio_schedule.json"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            schedule, link = _load_portfolio_schedule(path)
+        self.assertEqual(link["schema"], "aster-portfolio-schedule-v1")
+        self.assertEqual(
+            _portfolio_policy_for_signal(pd.Timestamp("2024-02-01"), schedule)[
+                "selected_profile_id"
+            ],
+            "defensive",
+        )
+        self.assertEqual(
+            _portfolio_policy_for_signal(pd.Timestamp("2024-05-01"), schedule)[
+                "industry_active_tilt"
+            ],
+            0.10,
+        )
+
     def test_showcase_portfolio_decision_retains_hindsight_disclosure(self) -> None:
         directive = PortfolioShowcaseDirective(
             target_profile_id="balanced",

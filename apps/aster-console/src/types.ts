@@ -24,7 +24,12 @@ export interface Factor {
   hypothesis: string;
   mechanism: string;
   expectedDirection: string;
+  descriptionZh?: string;
+  hypothesisZh?: string;
+  mechanismZh?: string;
+  expectedDirectionZh?: string;
   falsificationCriteria: string[];
+  falsificationCriteriaZh?: string[];
   mechanismSource: string;
   tags: string[];
   version: string;
@@ -45,8 +50,10 @@ export interface Vote {
   action: "enable" | "disable" | "abstain";
   confidence: number;
   rationale: string;
+  rationale_zh?: string;
   evidence_ids: string[];
   risks: string[];
+  risks_zh?: string[];
 }
 
 export interface Snapshot {
@@ -83,9 +90,13 @@ export interface Snapshot {
         mechanisms: Array<{
           factorId: string;
           hypothesis: string;
+          hypothesisZh?: string;
           mechanism: string;
+          mechanismZh?: string;
           expectedDirection: string;
+          expectedDirectionZh?: string;
           falsificationCriteria: string[];
+  falsificationCriteriaZh?: string[];
         }>;
       }>;
     };
@@ -95,6 +106,7 @@ export interface Snapshot {
       selectedGroups: string[];
       disabledGroups: string[];
       rationale: string;
+      rationaleZh?: string | null;
       confidence: number | null;
       fallbackUsed: boolean;
       fallbackReason: string | null;
@@ -108,9 +120,11 @@ export interface Snapshot {
     ballots: Array<{
       role: string;
       summary: string;
+      summaryZh?: string;
       votes: Vote[];
       mechanismReviews: Array<Record<string, unknown>>;
       dissentConditions: string[];
+      dissentConditionsZh?: string[];
     }>;
     mechanismReviewPending: boolean;
   };
@@ -119,6 +133,15 @@ export interface Snapshot {
       id: string;
       label: string;
       metrics: Record<string, number>;
+      report?: {
+        decisionAt?: string;
+        effectiveTo?: string;
+        profile?: string;
+        targetBeta?: number;
+        memo?: string;
+        memoEn?: string;
+        confidence?: number;
+      } | null;
       council: {
         selectedProfile: string | null;
         overweights: string[];
@@ -135,6 +158,7 @@ export interface Snapshot {
         drawdown: number;
         beta: number;
         profile: string;
+        benchmarkNav?: number | null;
       }>;
     }>;
   };
@@ -165,4 +189,114 @@ export interface Snapshot {
       updated_at?: string;
     }>;
   };
+}
+
+export interface ReplayRound {
+  round_id: string;
+  previous_round_id: string | null;
+  origin: "saved_council_decision" | "quarterly_automatic_proposal" | "human_reconsideration";
+  created_at: string;
+  human_instruction: string | null;
+  selected_groups: string[];
+  disabled_groups: string[];
+  rationale: string;
+  evidence_ids: string[];
+  dissent: string[];
+  confidence: number;
+  valid: boolean;
+  validation_errors: string[];
+  model: string;
+  prompt_hash: string;
+  token_usage: { input: number | null; output: number | null } | null;
+  web_evidence_digest?: string | null;
+  web_evidence_ids?: string[];
+}
+
+export interface ReplayPortfolioRound {
+  round_id: string;
+  factor_round_id: string;
+  origin: string;
+  created_at: string;
+  selected_profile_id: "defensive" | "balanced" | "opportunistic";
+  stock_target: number;
+  target_beta: number;
+  beta_tolerance: number;
+  industry_overweights: string[];
+  industry_underweights: string[];
+  industry_active_tilt: number;
+  rationale: string;
+  evidence_ids: string[];
+  dissent: string[];
+  confidence: number;
+  fallback_used: boolean;
+  fallback_reason: string | null;
+  valid: boolean;
+  validation_errors: string[];
+  model: string;
+  prompt_hash: string;
+  prompt_version?: string;
+  token_usage: { input: number | null; output: number | null } | null;
+  packet_digest: string | null;
+  web_evidence_digest?: string | null;
+}
+
+export interface ReplayNode {
+  node_id: string;
+  decision_at: string;
+  input_cutoff: string;
+  evidence_as_of: string;
+  evidence_status: "current" | "carry_forward";
+  frequency: "quarterly";
+  segment_start: string;
+  segment_end: string;
+  mode: string;
+  uses_hindsight: boolean;
+  disclosure: string | null;
+  packet_digest: string;
+  candidate_groups: string[];
+  constraints: Record<string, unknown>;
+  status: string;
+  accepted_round_id: string | null;
+  accepted_at?: string;
+  web_evidence?: {
+    provider: string;
+    captured_at: string;
+    evidence_digest: string;
+    accepted: Array<{
+      evidence_id: string;
+      title: string;
+      url: string;
+      site_name: string | null;
+      published_at: string | null;
+      snippet: string;
+      pit_eligible: boolean;
+    }>;
+    rejected: Array<Record<string, unknown>>;
+    errors: string[];
+    disclosure: string | null;
+  };
+  rounds: ReplayRound[];
+  portfolio_rounds: ReplayPortfolioRound[];
+  run: {
+    state: "idle" | "computing" | "ready" | "failed";
+    error: string | null;
+    metrics: Record<string, number>;
+    curve: Array<{ date: string; nav: number; drawdown: number; beta: number; profile: string }>;
+    completed_at?: string;
+  };
+}
+
+export interface ReplaySession {
+  schema: string;
+  session_id: string;
+  created_at: string;
+  updated_at: string;
+  version: string;
+  max_reconsideration_rounds: number;
+  decision_frequency: "quarterly";
+  automation_mode: "interactive" | "automatic";
+  automation_state: "manual" | "deciding" | "backtesting" | "ready" | "failed";
+  current_node_index: number;
+  playback: { state: "playing" | "paused"; node_id: string | null; changed_at?: string };
+  nodes: ReplayNode[];
 }

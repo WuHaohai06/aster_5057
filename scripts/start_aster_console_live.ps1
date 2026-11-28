@@ -13,9 +13,22 @@ $Python = Resolve-AsterPython -EnvironmentName "aster_5057_whh" -OverrideVariabl
 $Frontend = Join-Path $ProjectRoot "apps\aster-console"
 $Runtime = Join-Path $ProjectRoot "run\aster_console"
 New-Item -ItemType Directory -Force -Path $Runtime | Out-Null
+$SecretPath = Join-Path $ProjectRoot "run\secrets\deepseek_api_key.dpapi"
+if ([string]::IsNullOrWhiteSpace($env:DEEPSEEK_API_KEY) -and (Test-Path -LiteralPath $SecretPath)) {
+    $SecureKey = Get-Content -LiteralPath $SecretPath -Raw | ConvertTo-SecureString
+    $KeyPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecureKey)
+    try { $env:DEEPSEEK_API_KEY = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($KeyPointer) }
+    finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($KeyPointer) }
+}
+$env:OPENAI_BASE_URL = "https://api.deepseek.com"
+$env:CHAT_MODEL = "deepseek-flash"
 
-& $Python -c "import fastapi, uvicorn" 2>$null
-if ($LASTEXITCODE -ne 0) {
+$PreviousErrorAction = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+& $Python -c "import fastapi, uvicorn, openai" 2>$null
+$DependencyProbeExitCode = $LASTEXITCODE
+$ErrorActionPreference = $PreviousErrorAction
+if ($DependencyProbeExitCode -ne 0) {
     & $Python -m pip install -r (Join-Path $ProjectRoot "requirements-console.txt")
     if ($LASTEXITCODE -ne 0) { throw "Failed to install console API dependencies." }
 }

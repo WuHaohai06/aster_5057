@@ -3,7 +3,9 @@ param(
     [Parameter(Mandatory=$true)][string]$EndDate,
     [string]$OutputRoot = "",
     [string]$FactorDecision = "",
+    [string]$FactorSchedule = "",
     [string]$PortfolioDecision = "",
+    [string]$PortfolioSchedule = "",
     [string]$FactorCatalog = "",
     [string]$IndustrySnapshot = "",
     [string]$IndustryBenchmark = ""
@@ -27,8 +29,14 @@ $Arguments = @(
 if (-not [string]::IsNullOrWhiteSpace($FactorDecision)) {
     $Arguments += @("--factor-decision", (Resolve-Path $FactorDecision).Path)
 }
+if (-not [string]::IsNullOrWhiteSpace($FactorSchedule)) {
+    $Arguments += @("--factor-schedule", (Resolve-Path $FactorSchedule).Path)
+}
 if (-not [string]::IsNullOrWhiteSpace($PortfolioDecision)) {
     $Arguments += @("--portfolio-decision", (Resolve-Path $PortfolioDecision).Path)
+}
+if (-not [string]::IsNullOrWhiteSpace($PortfolioSchedule)) {
+    $Arguments += @("--portfolio-schedule", (Resolve-Path $PortfolioSchedule).Path)
 }
 if ([string]::IsNullOrWhiteSpace($FactorCatalog)) {
     $DefaultFactorCatalog = Join-Path $ProjectRoot "data\curated\factor_library\catalog.json"

@@ -70,7 +70,7 @@ class PortfolioShowcaseDirective(StrictModel):
     target_profile_id: str
     target_industry_overweights: list[str] = Field(default_factory=list, max_length=3)
     target_industry_underweights: list[str] = Field(default_factory=list, max_length=3)
-    target_industry_active_tilt: float = Field(default=0.0, ge=0.0, le=0.10)
+    target_industry_active_tilt: float = Field(default=0.0, ge=0.0, le=0.20)
     future_window_start: date
     future_window_end: date
     retrospective_outcome_summary: str = Field(min_length=20)
@@ -152,7 +152,7 @@ class PortfolioChairRecommendation(StrictModel):
     selected_profile_id: str
     industry_overweights: list[str] = Field(default_factory=list, max_length=3)
     industry_underweights: list[str] = Field(default_factory=list, max_length=3)
-    industry_active_tilt: float = Field(default=0.0, ge=0.0, le=0.10)
+    industry_active_tilt: float = Field(default=0.0, ge=0.0, le=0.20)
     rationale: str = Field(min_length=20)
     evidence_ids: list[str] = Field(min_length=1)
     dissent: list[str] = Field(default_factory=list)
@@ -183,7 +183,7 @@ class PortfolioCouncilDecision(StrictModel):
     selected_profile_id: str
     industry_overweights: list[str] = Field(default_factory=list, max_length=3)
     industry_underweights: list[str] = Field(default_factory=list, max_length=3)
-    industry_active_tilt: float = Field(default=0.0, ge=0.0, le=0.10)
+    industry_active_tilt: float = Field(default=0.0, ge=0.0, le=0.20)
     rationale: str
     evidence_ids: list[str]
     dissent: list[str] = Field(default_factory=list)
@@ -323,7 +323,7 @@ def _validate_chair(
         errors.append("an industry cannot be both overweight and underweight")
     if not overweights.union(underweights).issubset(available_industries):
         errors.append("chair selected an unknown industry")
-    if recommendation.industry_active_tilt not in {0.0, 0.05, 0.08, 0.10}:
+    if recommendation.industry_active_tilt not in {0.0, 0.05, 0.08, 0.10, 0.15, 0.20}:
         errors.append("industry active tilt is not an approved level")
     if (overweights or underweights) and recommendation.industry_active_tilt == 0.0:
         errors.append("industry selections require a positive active tilt")
@@ -342,6 +342,13 @@ def _validate_chair(
         if recommendation.use_fallback:
             errors.append("showcase target selection is not the research fallback")
     return errors
+
+
+def validate_portfolio_recommendation(
+    packet: PortfolioCouncilPacket, recommendation: PortfolioChairRecommendation
+) -> list[str]:
+    """Public validation boundary used by interactive two-stage Council flows."""
+    return _validate_chair(packet, recommendation)
 
 
 class PortfolioCouncilOrchestrator:
